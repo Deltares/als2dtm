@@ -1,0 +1,11 @@
+julia 0.6
+ColorTypes
+Colors
+DataArrays
+GDAL
+LasIO
+NearestNeighbors
+PeatUtils
+ProgressMeter
+SortingAlgorithms
+StaticArrays
