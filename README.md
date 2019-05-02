@@ -1,4 +1,6 @@
-# ALS to DTM
+[![DOI](https://zenodo.org/badge/178010374.svg)](https://zenodo.org/badge/latestdoi/178010374)
+# ALS to DTM 
+
 All code required to create DTMs from raw `.las` or `.laz` files. Uses the morphological filter from *Zhang et al. (2003)*[1] for filtering ground points.
 Code used in *Vernimmen et al. (2019)*[2].
 
