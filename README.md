@@ -2,7 +2,7 @@
 # ALS to DTM 
 
 All code required to create DTMs from raw `.las` or `.laz` files. Uses the morphological filter from *Zhang et al. (2003)*[1] for filtering ground points.
-Code used in *Vernimmen et al. (2019)*[2].
+Code used in *Vernimmen et al. 2019. Creating a lowland and peatland landscape DTM from interpolated partial coverage LiDAR data for Central Kalimantan and East Sumatra. Remote Sensing 11, 1152* [2] [![DOI:10.3390/rs11101152](https://zenodo.org/badge/DOI/10.3390/rs11101152.svg)](https://doi.org/10.3390/rs11101152)
 
 ## Derived packages
 This is an archived copy of a part of our complete LiDAR pipeline, running on Julia 0.6 (unmaintained as of 4/2/2019).
@@ -64,4 +64,4 @@ https://github.com/visr/LasIO.jl/issues/4 and https://github.com/FugroRoames/Poi
 ## References
 [1]: Zhang, Keqi, Shu-Ching Chen, Dean Whitman, Mei-Ling Shyu, Jianhua Yan, and Chengcui Zhang. “A Progressive Morphological Filter for Removing Nonground Measurements from Airborne LIDAR Data.” IEEE Transactions on Geoscience and Remote Sensing 41, no. 4 (2003): 872–82. https://doi.org/10.1109/TGRS.2003.810682.
 
-[2]: Vernimmen et al. (2019) "" *in review*
+[2]: [![DOI:10.3390/rs11101152](https://zenodo.org/badge/DOI/10.3390/rs11101152.svg)](https://doi.org/10.3390/rs11101152) Vernimmen, R., Hooijer, A., Yuherdha, A.T., Visser, M., Pronk, M., Eilander, D., Akmalia, R., Fitranatanegara, N., Mulyadi, D., Andreas, H., Ouellette, J., Warwick Hadley, W., 2019. Creating a lowland and peatland landscape DTM from interpolated partial coverage LiDAR data for Central Kalimantan and East Sumatra. Remote Sensing 11, 1152, https://doi.org/10.3390/rs11101152. 
