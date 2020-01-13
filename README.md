@@ -7,7 +7,7 @@ Code used in *Vernimmen et al. 2019. Creating a lowland and peatland landscape D
 ## Derived packages
 This is an archived copy of a part of our complete LiDAR pipeline, running on Julia 0.6 (unmaintained as of 4/2/2019).
 We advise to use our derived, more generic open-source packages:
-- [GeoRasters.jl](https://github.com/evetion/GeoRasters.jl) For spatial raster creation (replaces PeatUtils).
+- [GeoArrays.jl](https://github.com/evetion/GeoArrays.jl) For spatial raster creation (replaces PeatUtils).
 - [GeoRasterFiltering.jl](https://github.com/Deltares/GeoRasterFiltering.jl) For spatial filters (replaces GridOperations).
 - [PointCloudRasterizers.jl](https://github.com/Deltares/PointCloudRasterizers.jl) For rasterizing and filtering pointclouds (replaces XYZ).
 - [LasIO.jl](https://github.com/visr/LasIO.jl) Native parser for the .las data format.
