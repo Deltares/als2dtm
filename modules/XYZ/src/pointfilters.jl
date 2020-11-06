@@ -1,4 +1,4 @@
-#=
+#= 
 Predicate functions to filter points in Clouds based on positions or attributes.
 A point is defined by a PointCould and index.
 
@@ -13,7 +13,7 @@ Format should be according to:
         true
     end
 
-=#
+Dirk Eilander, Martijn Visser, Maarten Pronk, Deltares, 11-2016, 10-2017 =#
 
 ground_water(cloud::Cloud, i::Integer) = (cloud[:classification][i] == 2) || (cloud[:classification][i] == 9)
 ground(cloud::Cloud, i::Integer) = (cloud[:classification][i] == 2)

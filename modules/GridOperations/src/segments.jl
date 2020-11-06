@@ -1,12 +1,12 @@
-#function for segmentation in grids based on thresholding and connectivity
-#
+# function for segmentation in grids based on thresholding and connectivity
+# 
 # based on functions from Images module
 
 
 function im_labeling(tf::Matrix{U}; connectivity=8) where U <: Integer
     # create connectivity array
     if connectivity == 8
-        connect_array = trues(3,3)
+        connect_array = trues(3, 3)
     elseif connectivity == 4
         connect_array = BitMatrix([0 1 0; 1 1 1; 0 1 0])
     end
@@ -19,7 +19,7 @@ end
 function im_labeling(tf::BitMatrix; connectivity=8)
     # create connectivity array
     if connectivity == 8
-        connect_array = trues(3,3)
+        connect_array = trues(3, 3)
     elseif connectivity == 4
         connect_array = BitMatrix([0 1 0; 1 1 1; 0 1 0])
     end
@@ -38,16 +38,16 @@ connectivity    all surrounding pixels (=8) or only N-E-S-W pixels (=4) (default
 output
 updated label array
 """
-function im_segments_cleanup(segments::Array{U, 2}, min_area::Real;
+function im_segments_cleanup(segments::Array{U,2}, min_area::Real;
         res=1, connectivity=8) where U <: Integer
     # remove noise
     segments = copy(segments)
     segment_areas = component_lengths(segments)
     segment_idx = component_indices(segments)
     for lab in 1:maximum(segments) # skip background == 0
-        area = segment_areas[lab+1]
-        if area < (min_area / (res*res))
-            for idx in segment_idx[lab+1]
+        area = segment_areas[lab + 1]
+        if area < (min_area / (res * res))
+            for idx in segment_idx[lab + 1]
                 segments[idx] = 0
             end
         end
@@ -57,7 +57,8 @@ function im_segments_cleanup(segments::Array{U, 2}, min_area::Real;
 end
 
 
-function split_segments(segments::Array{U, 2}, block_size, min_area;
+
+function split_segments(segments::Array{U,2}, block_size, min_area;
     res=1, connectivity=8) where U <: Integer
 
     # split segments
@@ -67,14 +68,14 @@ function split_segments(segments::Array{U, 2}, block_size, min_area;
     block_size = Float64(block_size) / res
     nsegments = maximum(segments)
     for lab in 1:nsegments # skip background == 0
-        (ymin, xmin), (ymax, xmax) = segment_bbox[lab+1]
-        dx, dy = xmax-xmin+1, ymax-ymin+1
-        if ((dx > 1.5*block_size) || (dy > 1.5*block_size))
-            nrow, ncol = min(Int(cld(dy, block_size)),1), min(Int(cld(dx,block_size)),1)
-            for (y, x) in segment_idx[lab+1]
+        (ymin, xmin), (ymax, xmax) = segment_bbox[lab + 1]
+        dx, dy = xmax - xmin + 1, ymax - ymin + 1
+        if ((dx > 1.5 * block_size) || (dy > 1.5 * block_size))
+            nrow, ncol = min(Int(cld(dy, block_size)), 1), min(Int(cld(dx, block_size)), 1)
+            for (y, x) in segment_idx[lab + 1]
                 # cells include bottom and left boundaries
-                col = Int(fld(x - xmin, block_size)+1)
-                row = Int(fld(ymax - y, block_size)+1)
+                col = Int(fld(x - xmin, block_size) + 1)
+                row = Int(fld(ymax - y, block_size) + 1)
                 iblock = sub2ind((nrow, ncol), row, col)
                 segments[y,x] = iblock
             end
@@ -87,17 +88,17 @@ function split_segments(segments::Array{U, 2}, block_size, min_area;
     segment_areas = component_lengths(segments)
     segment_idx = component_indices(segments)
     for lab in 1:maximum(segments) # skip background == 0
-        area = segment_areas[lab+1]
-        if area < (min_area / (res*res))
+        area = segment_areas[lab + 1]
+        if area < (min_area / (res * res))
             b = falses(segments)
-            for idx in segment_idx[lab+1]
+            for idx in segment_idx[lab + 1]
                 b[idx] = true
             end
             bd = dilate(b)
             neighboring_cells = bd .& broadcast(~, b)
             new_lab = maximum(segments[neighboring_cells]) # find label neighboring segment
             new_lab == 0 && continue # no neighboring segments
-            for idx in segment_idx[lab+1]
+            for idx in segment_idx[lab + 1]
                 segments[idx] = new_lab
             end
         end
@@ -114,9 +115,9 @@ A               input image with to sample from can [Array{2,Real}]
 
 output
 image with reduced value in all segment pixels"""
-function im_segments_reduce(segments::Array{U, 2}, A::Array{T, 2};
+function im_segments_reduce(segments::Array{U,2}, A::Array{T,2};
                             connectivity=8,
-                            func=x -> maximum(x)-minimum(x),
+                            func=x -> maximum(x) - minimum(x),
                             nodata=-9999.0) where U <: Integer where T <: AbstractFloat
     @assert size(segments) == size(A) "the size of image A and binary grid should match"
 
@@ -133,7 +134,7 @@ function im_segments_reduce(segments::Array{U, 2}, A::Array{T, 2};
             B = fill(reduced_type(nodata), size(A))
             initiate = false
         else
-            vals = [xi for xi=A[idx] if xi != nodata]
+            vals = [xi for xi = A[idx] if xi != nodata]
             if !isempty(vals)
                 B[idx] = func(vals)
             end

@@ -1,3 +1,5 @@
+## TODO update method descriptions
+## TODO add linear and cubic interpolation. watch if https://github.com/gasagna/Interp2D.jl gets upgraded to julia 0.5 and include
 """interpolate missing values (nodata) in a grid
 methods available:
 nearest neighbor
@@ -30,7 +32,7 @@ function interp_missing!(
         if mode in ["nn", "kriging", "idw"]
             tree = KDTree(xy_p)
         else
-            error("mode $(mode) not implemented")
+            @error("mode $(mode) not implemented")
         end
 
         # interpolation
@@ -38,7 +40,7 @@ function interp_missing!(
         dims = size(img)
         for I in 1:length(img)
             ismissing[I] || continue
-            x,y = ind2sub(dims, I)
+            x, y = ind2sub(dims, I)
             if mode == "nn"
                 img[I] = interpolator_nn(x, y, xy_p, z_p, tree)
             elseif mode == "kriging"
@@ -61,12 +63,12 @@ function interp2d(xy::Matrix{U}, xy_p::Matrix{U}, z_p::Vector{T};
     tree::NearestNeighbors.NNTree=KDTree(xy_p)) where T <: AbstractFloat where U <: Real
 
     # output
-    n = size(xy,2)
-    z = zeros(T,length(xy))
+    n = size(xy, 2)
+    z = zeros(T, length(xy))
 
     # interpolation
     for I in 1:n
-        x,y = xy[:,I]
+        x, y = xy[:,I]
         if mode == "nn"
             z[I] = interpolator_nn(x, y, xy_p, z_p, tree)
         elseif mode == "kriging"
@@ -77,7 +79,7 @@ function interp2d(xy::Matrix{U}, xy_p::Matrix{U}, z_p::Vector{T};
     end
 
     z
-end
+    end
 
 function interpolator_kriging(x::Real, y::Real,
     xy_p::Array{U,2}, z_p::Array{T,1},
@@ -95,10 +97,10 @@ function interpolator_kriging(x::Real, y::Real,
         # define an estimator (i.e. build the Kriging system)
         ordkrig = OrdinaryKriging(xy_p[:,idxs], z_p[idxs], γ)
         # estimate at target location
-        μ, _ = estimate(ordkrig, T[x,y]) # not using σ²
+        μ, _ = predict(ordkrig, T[x,y]) # not using σ²
         μ
     else
-        error("no points to interpolate")
+        @error("no points to interpolate")
     end
 end
 
@@ -116,7 +118,7 @@ function interpolator_idw(x::Real, y::Real,
     elseif length(idxs) > 0
         idw_interpolation(z_p[idxs], dists; power=p)
     else
-        error("no points to interpolate")
+        @error("no points to interpolate")
     end
 end
 
@@ -139,7 +141,7 @@ function xy_z_grid(img::Array{T,2}; nodata::Real=-9999.0) where T
     for I in 1:length(img)
         if img[I] != nodata
             i += 1
-            x,y = ind2sub(dims, I)
+            x, y = ind2sub(dims, I)
             # build xy and z arrays for KDTree
             xy[1, i] = x
             xy[2, i] = y
@@ -164,7 +166,7 @@ end
 
 """calculate the Inverse Distance Weighting interpolation for one point"""
 function idw_interpolation(z::Vector{U}, dis::Vector{U}; power=10.) where U <: AbstractFloat
-    invdisp = 1.0 ./ (dis .^ power)
+    invdisp = 1.0 ./ (dis.^power)
     weights = invdisp ./ sum(invdisp)
     dot(weights, z)
 end
@@ -173,8 +175,8 @@ end
 function linear_interpolation(x::Real, y::Real, a::Vector{U},
         b::Vector{U}, c::Vector{U}) where U <: AbstractFloat
 
-    t1 = ((b[1]-a[1])*(c[3]-a[3])-(c[1]-a[1])*(b[3]-a[3]))
-    t2 = ((b[2]-a[2])*(c[3]-a[3])-(c[2]-a[2])*(b[3]-a[3]))
-    n = ((b[1]-a[1])*(c[2]-a[2])-(c[1]-a[1])*(b[2]-a[2]))
-    z = a[3] + t1/n*(y-a[2]) - t2/n*(x-a[1])
+    t1 = ((b[1] - a[1]) * (c[3] - a[3]) - (c[1] - a[1]) * (b[3] - a[3]))
+    t2 = ((b[2] - a[2]) * (c[3] - a[3]) - (c[2] - a[2]) * (b[3] - a[3]))
+    n = ((b[1] - a[1]) * (c[2] - a[2]) - (c[1] - a[1]) * (b[2] - a[2]))
+    z = a[3] + t1 / n * (y - a[2]) - t2 / n * (x - a[1])
 end

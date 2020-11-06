@@ -20,17 +20,17 @@ function hist_filter(A::Array{T,2}, perc::Real, r::Int;
                                 hist_min=nothing,
                                 hist_max=nothing) where T <: Real
     scale = T(10^precision) # default scale value
-    ksize = (2*r+1)^2 # kernel size
+    ksize = (2 * r + 1)^2 # kernel size
     nrows, ncols = size(A) # image size
     mask = (A .≠ nodata_value) .& isfinite.(A)
     if T == UInt8
         im_min, im_max = 0, 255
     elseif T <: Integer
-        precision > 0 && info("no scaling applied as A has integer values")
+        precision > 0 && @info("no scaling applied as A has integer values")
         scale = T(1)
         im_min, im_max = floor(Int, minimum(A[mask])), ceil(Int, maximum(A[mask]))
     else
-        im_min, im_max = floor(Int, minimum(A[mask]))*scale, ceil(Int, maximum(A[mask]))*scale
+        im_min, im_max = floor(Int, minimum(A[mask])) * scale, ceil(Int, maximum(A[mask])) * scale
     end
     # scale min max of hist to hist_min or hist_max if given
     if hist_min != nothing
@@ -40,23 +40,23 @@ function hist_filter(A::Array{T,2}, perc::Real, r::Int;
         im_max = hist_max * scale
     end
 
-    nodata_value_scaled = nodata_value*scale
+    nodata_value_scaled = nodata_value * scale
     @assert (im_max - im_min) >= 1 "the image bit depth with given 'precision', 'nodata_value', 'hist_min' and 'hist_max' params is zero"
     # create histogram bin size
-    nbins = ceil(Int, sqrt(im_max-im_min))
+    nbins = ceil(Int, sqrt(im_max - im_min))
     # fine level histograms have bins with size 1
     # course bin histogram bins are defined by:
-    edges_course = Int[im_min-1:nbins:nbins*nbins+im_min;]
+    edges_course = Int[im_min - 1:nbins:nbins * nbins + im_min;]
 
     # initialization of histograms
     # the counts arrays are not setup as offsetarrays because slicing doesn't work on these arrays
     # instead the arrays have an offset of r in indices
-    cnts_course = zeros(Int32, (nrows+2*r, nbins))
-    cnts_fine = zeros(Int32, (nrows+2*r, nbins, nbins))
+    cnts_course = zeros(Int32, (nrows + 2 * r, nbins))
+    cnts_fine = zeros(Int32, (nrows + 2 * r, nbins, nbins))
     # create seperate bins for both extremes and nodata
-    cnts_nodata = zeros(Int32, nrows+2*r)
-    cnts_min = zeros(Int32, nrows+2*r)
-    cnts_max = zeros(Int32, nrows+2*r)
+    cnts_nodata = zeros(Int32, nrows + 2 * r)
+    cnts_min = zeros(Int32, nrows + 2 * r)
+    cnts_max = zeros(Int32, nrows + 2 * r)
 
     # create output array B
     B = similar(A)
@@ -68,16 +68,16 @@ function hist_filter(A::Array{T,2}, perc::Real, r::Int;
             v = round(v * scale, 0) # scaling for non 8bit images
         end
         if v ≈ nodata_value_scaled
-            cnts_nodata[i+r] += w # offset r in cnts arrays
+            cnts_nodata[i + r] += w # offset r in cnts arrays
         elseif v < im_min
-            cnts_min[i+r] += w
+            cnts_min[i + r] += w
         elseif v >= im_max
-            cnts_max[i+r] += w
+            cnts_max[i + r] += w
         else
-            icourse = min(Int(div(v-im_min, nbins)) + 1, nbins) # min to include right boundary
-            ifine = min(Int(div(v-edges_course[icourse], 1)), nbins) # fine bins have size 1
-            cnts_course[i+r, icourse] += w # offset r in cnts arrays
-            cnts_fine[i+r, ifine, icourse] += w
+            icourse = min(Int(div(v - im_min, nbins)) + 1, nbins) # min to include right boundary
+            ifine = min(Int(div(v - edges_course[icourse], 1)), nbins) # fine bins have size 1
+            cnts_course[i + r, icourse] += w # offset r in cnts arrays
+            cnts_fine[i + r, ifine, icourse] += w
         end
 
         nothing
@@ -88,17 +88,17 @@ function hist_filter(A::Array{T,2}, perc::Real, r::Int;
         pbin, icourse = 0, 0
         for icourse in 1:nbins
             # use of sum is faster than loop. tested with BenchmarkTools and ProfileView
-            pbin = sum(cnts_course[i:i+r*2, icourse])
-            pcum += pbin #[icourse]
+            pbin = sum(cnts_course[i:i + r * 2, icourse])
+            pcum += pbin # [icourse]
             pcum >= p_idx && break
         end
         pcum -= pbin
         pcum, icourse
     end
     function bin_count_fine(i::Int, p_idx::Int, pcum::Int, icourse::Int)
-        ifine=0
+        ifine = 0
         for ifine in 1:nbins
-            pcum += sum(cnts_fine[i:i+r*2, ifine, icourse])
+            pcum += sum(cnts_fine[i:i + r * 2, ifine, icourse])
             pcum >= p_idx && break
         end
         pcum, ifine
@@ -108,8 +108,8 @@ function hist_filter(A::Array{T,2}, perc::Real, r::Int;
     function bin_count_course_rev(i::Int, p_idx::Int, pcum::Int)
         pbin, icourse = 0, 0
         for icourse in nbins:-1:1
-            pbin = sum(cnts_course[i:i+r*2, icourse])
-            pcum += pbin #[icourse]
+            pbin = sum(cnts_course[i:i + r * 2, icourse])
+            pcum += pbin # [icourse]
             pcum >= (ksize - p_idx) && break
         end
         pcum -= pbin
@@ -118,7 +118,7 @@ function hist_filter(A::Array{T,2}, perc::Real, r::Int;
     function bin_count_fine_rev(i::Int, p_idx::Int, pcum::Int, icourse::Int)
         ifine = 0
         for ifine in nbins:-1:1
-            pcum += sum(cnts_fine[i:i+r*2, ifine, icourse])
+            pcum += sum(cnts_fine[i:i + r * 2, ifine, icourse])
             pcum >= (ksize - p_idx) && break
         end
         pcum, ifine
@@ -127,18 +127,18 @@ function hist_filter(A::Array{T,2}, perc::Real, r::Int;
     # find percentile value from multi level histogram
     function calc_perc(i::Int)
         # number of nodata_size values in kernel
-        nodata_size = sum(cnts_nodata[i:i+r*2])
+        nodata_size = sum(cnts_nodata[i:i + r * 2])
         if nodata_size < ksize # calculate percentile if more than half window with values
-            p_idx = ceil(Int, max((ksize-nodata_size) * perc / 100., 1))
+            p_idx = ceil(Int, max((ksize - nodata_size) * perc / 100., 1))
             # find percentile bin
             icourse, ifine = 0, 0
-            if perc <= 100
-                hist_min != nothing ? pcum = sum(cnts_min[i:i+r*2]) : pcum = 0
+            if perc <= 100  # TODO: fix reverse
+                hist_min != nothing ? pcum = sum(cnts_min[i:i + r * 2]) : pcum = 0
                 # start from begin of histogram
                 pcum, icourse = bin_count_course(i, p_idx, pcum)
                 pcum, ifine = bin_count_fine(i, p_idx, pcum, icourse)
             else
-                hist_max != nothing ? pcum = sum(cnts_max[i:i+r*2]) : pcum = 0
+                hist_max != nothing ? pcum = sum(cnts_max[i:i + r * 2]) : pcum = 0
                 # start from end in histograms
                 pcum, icourse = bin_count_course_rev(i, p_idx, pcum)
                 pcum, ifine = bin_count_fine_rev(i, p_idx, pcum, icourse)
@@ -152,23 +152,23 @@ function hist_filter(A::Array{T,2}, perc::Real, r::Int;
     end
 
     ## start actual looping
-    for j = 1:ncols, i in 1:nrows
+    for j in 1:ncols, i in 1:nrows
         if j == 1 && i == 1 # initiate top left
-            for kj = -r:r, ki = -r:r
-                add_value!(i+ki, Apad[i+ki, j+kj])
+            for kj in -r:r, ki in -r:r
+                add_value!(i + ki, Apad[i + ki, j + kj])
             end
         elseif j == 1 && i > 1 # initiate first col
             for kj in -r:r
-                add_value!(i+r, Apad[i+r, j+kj])
+                add_value!(i + r, Apad[i + r, j + kj])
             end
         elseif i == 1 && j > 1 # first row
             for ki in -r:r
-                add_value!(i+ki, Apad[i+ki, j-r-1]; w=-1) # remove old value
-                add_value!(i+ki, Apad[i+ki, j+r])
+                add_value!(i + ki, Apad[i + ki, j - r - 1]; w=-1) # remove old value
+                add_value!(i + ki, Apad[i + ki, j + r])
             end
         else
-            add_value!(i+r, Apad[i+r, j-r-1]; w=-1) # remove old value
-            add_value!(i+r, Apad[i+r, j+r])
+            add_value!(i + r, Apad[i + r, j - r - 1]; w=-1) # remove old value
+            add_value!(i + r, Apad[i + r, j + r])
         end
         B[i,j] = calc_perc(i)
     end
@@ -193,7 +193,7 @@ function vosselman_filter(A::Array{T,2},
     res=1.,             # resolution of grid a.k.a. cell size [m]
     nodata::T=T(-9999.0)) where T <: AbstractFloat
 
-    r = round(Int, radius/res) # length in # off cells in which to search for neighbours
+    r = round(Int, radius / res) # length in # off cells in which to search for neighbours
 
     # create output array B
     nrows, ncols = size(A)
@@ -203,16 +203,16 @@ function vosselman_filter(A::Array{T,2},
     Apad = ImageFiltering.padarray(A, Pad(:replicate, r, r))
 
     # loop offsets
-    for kj = -r:r, ki = -r:r
-        k_dist = hypot(ki,kj)
-        ((k_dist > r) || ((ki==1) && (kj==1))) && continue # skip offset if out of range or zero
+    for kj in -r:r, ki in -r:r
+        k_dist = hypot(ki, kj)
+        ((k_dist > r) || ((ki == 1) && (kj == 1))) && continue # skip offset if out of range or zero
         k_tol = k_dist .* res .* max_slope + tolerance
         ## loop through image
-        for j = 1:ncols, i = 1:nrows
+        for j in 1:ncols, i in 1:nrows
             zi = A[i,j]
             zi == nodata && continue
             # replace if smaller than current (find min in kernel)
-            zj = Apad[i+ki,j+kj] + k_tol
+            zj = Apad[i + ki,j + kj] + k_tol
             zj == nodata && continue  # skip nodata values in kernel
             if zj < B[i, j]
                 B[i, j] = zj
@@ -259,7 +259,7 @@ function pmf_filter(A::Matrix{Float32}, boundarymask::BitMatrix,
     # maximum window size of kernel in pixels
     rad_pix_max = round(Int, max_window_radius / res)
     # exponential increase radius; window size = 3,5,9,17,33,..,N
-    kmax = ceil(Int, log2(rad_pix_max*2))
+    kmax = ceil(Int, log2(rad_pix_max * 2))
     w = [Int(exp2(k)) + 1 for k in 1:kmax]
     w[end] = rad_pix_max * 2 + 1
     # deprecate linear window growth -> does not give satisfying results
@@ -267,20 +267,20 @@ function pmf_filter(A::Matrix{Float32}, boundarymask::BitMatrix,
     # w = Int[2*k + 1 for k in 1:rad_pix_max]
 
     # give a warning when the slope will exceed dh_max
-    slope * (w[end] - w[end-1]) * res + dh_min > dh_max && warn("dh_max will limit pmf filter")
+    slope * (w[end] - w[end - 1]) * res + dh_min > dh_max && @warn("dh_max will limit pmf filter")
 
     # initialize
     dh_t = dh_min
     Af = copy(A)
     # create max allowed surface (use to classify pointcloud)
-    B = Af + dh_t
+    B = Af .+ dh_t
     # loop through kernel sizes
 
     @showprogress 1 "Progessive filtering..." for (k, wk) in enumerate(w)
 
         # threshold
         if k > 1
-            dh_t = min(slope * (wk - w[k-1]) * res + dh_min, dh_max)
+            dh_t = min(slope * (wk - w[k - 1]) * res + dh_min, dh_max)
         end
 
         # calculate morph opening
@@ -288,7 +288,7 @@ function pmf_filter(A::Matrix{Float32}, boundarymask::BitMatrix,
 
         # update max allowed surface
         if k == 1
-            B[:,:] = Af + dh_t
+            B[:,:] = Af .+ dh_t
         else
             for I in eachindex(Af)
                 # replace if smaller than current z_max
@@ -341,8 +341,8 @@ function enhanced_lee_filter(img::Array{T,2}, size::Real;
         k=1.0,
         nodata=T(-9999.0)) where T <: AbstractFloat
 
-    max_cof_var = sqrt(1+2/enl)
-    cu = 0.523/sqrt(enl)
+    max_cof_var = sqrt(1 + 2 / enl)
+    cu = 0.523 / sqrt(enl)
 
     # local statistics
     fmean(A::AbstractArray) = mean(filter(x -> x != nodata, A))
@@ -355,18 +355,18 @@ function enhanced_lee_filter(img::Array{T,2}, size::Real;
     # these are here set to 0.0
     window_variance = clamp.(window_variance, 0.0, Inf)
     window_cof_var = sqrt.(window_variance) ./ window_mean
-    window_cof_var[window_cof_var .== 0] = 0.001 # avoid zero division
+    window_cof_var[window_cof_var .== 0] .= 0.001 # avoid zero division
 
     # smoothing weights
     # filter in heterogeneous area
-    w = T.(exp.(-k .* (window_cof_var - cu) ./ (max_cof_var - window_cof_var)))
+    w = T.(exp.(-k .* (window_cof_var .- cu) ./ (max_cof_var .- window_cof_var)))
     # preserver original value for "point target" (e.g around edges)
-    w[window_cof_var .>= max_cof_var] = 0.0
+    w[window_cof_var .>= max_cof_var] .= 0.0
     # return local mean in homogeneous areas
-    w[window_cof_var .<= cu] = 1.0
+    w[window_cof_var .<= cu] .= 1.0
 
     # smoothed image
-    img_output = (img .* (1-w)) + (window_mean .* w)
+    img_output = (img .* (1 .- w)) + (window_mean .* w)
 end
 
 # morphological operations with circular kernel
@@ -376,13 +376,13 @@ function morph_erosion(A::Matrix{Float32}, boundarymask::BitMatrix, r::Int)
     Apad = padarray(A, Pad(:replicate, r, r)) # pad A
 
     # loop offsets
-    @inbounds for kj = -r:r, ki = -r:r
-        ((hypot(ki,kj) > r) || ((ki==0) && (kj==0))) && continue # skip offset if out of range or zero
+    @inbounds for kj in -r:r, ki in -r:r
+        ((hypot(ki, kj) > r) || ((ki == 0) && (kj == 0))) && continue # skip offset if out of range or zero
         ## loop through image
-        for j = 1:ncols, i = 1:nrows
+        for j in 1:ncols, i in 1:nrows
             boundarymask[i,j] || continue
             # replace if smaller than current (find min in kernel)
-            zo = Apad[i+ki,j+kj]
+            zo = Apad[i + ki,j + kj]
             if zo < B[i, j]
                 B[i, j] = zo
             end
@@ -397,13 +397,13 @@ function morph_dilation(A::Matrix{Float32}, boundarymask::BitMatrix, r::Int)
     Apad = padarray(A, Pad(:replicate, r, r)) # pad A
 
     # loop offsets
-    @inbounds for kj = -r:r, ki = -r:r
-        ((hypot(ki,kj) > r) || ((ki==0) && (kj==0))) && continue # skip offset if out of range or zero
+    @inbounds for kj in -r:r, ki in -r:r
+        ((hypot(ki, kj) > r) || ((ki == 0) && (kj == 0))) && continue # skip offset if out of range or zero
         ## loop through image
-        for j = 1:ncols, i = 1:nrows
+        for j in 1:ncols, i in 1:nrows
             boundarymask[i,j] || continue
             # replace if larger than current (find max in kernel)
-            zo = Apad[i+ki,j+kj]
+            zo = Apad[i + ki,j + kj]
             if zo > B[i, j]
                 B[i, j] = zo
             end

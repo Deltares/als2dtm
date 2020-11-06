@@ -28,7 +28,7 @@ using Compat
 using Nullables
 using ColorTypes
 using FixedPointNumbers
-using Colors
+# using Colors
 using GDAL
 using FileIO
 using LasIO
@@ -47,5 +47,6 @@ include("cloudfilter.jl")
 include("cloudclassifier.jl")
 include("lasio.jl")
 include("writers.jl")
+# include("rasterize3d.jl")
 
 end

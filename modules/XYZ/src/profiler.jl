@@ -1,18 +1,21 @@
-#=
+#= 
 functions to create index points from pointcloud along line defined by start & end point.
 
 profiler generetes DataFrame with XYZ and attribute information from pointcloud,
 where X and Y are defined along line
 
-=#
+Dirk Eilander, Martijn Visser, Deltares, 11-2016
 
-struct Profile{U<:Integer,T<:AbstractFloat}
+TODO:
+- great profiler function that already summarizes output per bin =#
+
+struct Profile{U <: Integer,T <: AbstractFloat}
     pointindex::Vector{U}
     pointlx::Vector{T}
     pointly::Vector{T}
     maxdist::T
-    pstart::Tuple{T, T}
-    pend::Tuple{T, T}
+    pstart::Tuple{T,T}
+    pend::Tuple{T,T}
     len::T
 end
 
@@ -27,7 +30,7 @@ Base.length(p::Profile) = length(p.pointindex)
 
 "index points along profileline"
 function define_profile(cloud::Cloud, ps::Tuple{T,T}, pe::Tuple{T,T}, maxdist::T;
-    pointfilter = nothing) where T <: Real
+    pointfilter=nothing) where T <: Real
 
     # define line and bbox
     x_min, x_max = minmax(ps[1], pe[1])
@@ -39,7 +42,7 @@ function define_profile(cloud::Cloud, ps::Tuple{T,T}, pe::Tuple{T,T}, maxdist::T
 
     # define rotated grid orientation
     transrot = segment_transformation(ps, pe)
-    len = hypot(ps[1] - pe[1], ps[2] - pe[2]) #length(ps, pe)
+    len = hypot(ps[1] - pe[1], ps[2] - pe[2]) # length(ps, pe)
 
     # loop through Cloud and store points
     n = length(positions(cloud))
@@ -97,10 +100,10 @@ end
 and translated coordinate system with the origin on the segment
 start, and positive x along the segment."""
 function segment_transformation(ps, pe)
-    θ = -atan2(pe[2]-ps[2], pe[1]-ps[1])
+    θ = -atan2(pe[2] - ps[2], pe[1] - ps[1])
     rot =  SMatrix{2,2}([cos(θ) -sin(θ); sin(θ) cos(θ)])
     trans = SVector(-ps[1], -ps[2])
-    transrot(x::SVector{2,Float64}) = *(rot, x+trans)
+    transrot(x::SVector{2,Float64}) = *(rot, x + trans)
 end
 
 

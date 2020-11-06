@@ -1,4 +1,5 @@
 using StatsBase
+using Statistics
 
 # get 2D xy array from pointcloud
 "read xy from Cloud"
@@ -99,18 +100,18 @@ end
 
 # reducer function to get any attribute of the lowest or highest point
 function reducer_lowestpoint_attr(field::Symbol)
-    reducer(cloud::XYZ.Cloud, index::Vector{U}) where U <: Integer = cloud[field][index[indmin(getz(cloud, index))]]
+    reducer(cloud::XYZ.Cloud, index::Vector{U}) where U <: Integer = cloud[field][index[argmin(getz(cloud, index))]]
 end
 function reducer_highestpoint_attr(field::Symbol)
-    reducer(cloud::XYZ.Cloud, index::Vector{U}) where U <: Integer = cloud[field][index[indmax(getz(cloud, index))]]
+    reducer(cloud::XYZ.Cloud, index::Vector{U}) where U <: Integer = cloud[field][index[argmax(getz(cloud, index))]]
 end
 
 # reduce_index, returns local(!) index of minimum / maximum
-reducer_minz_index(cloud::Cloud, index::Vector{U}) where U <: Integer = indmin(getz(cloud, index))
-reducer_maxz_index(cloud::Cloud, index::Vector{U}) where U <: Integer = indmax(getz(cloud, index))
+reducer_minz_index(cloud::Cloud, index::Vector{U}) where U <: Integer = argmin(getz(cloud, index))
+reducer_maxz_index(cloud::Cloud, index::Vector{U}) where U <: Integer = argmax(getz(cloud, index))
 
 
-const class_description = Dict{Int, String}(
+const class_description = Dict{Int,String}(
     0 => "Created, never classified",
     1 => "Unclassified",
     2 => "Ground",
@@ -150,6 +151,8 @@ function describe(filepath::String, cloud::Cloud)
     end
 end
 
+const colorscale = 0x0100 # = 256
+
 "Paint a Cloud efficiently with a Raster index and RGB bands from an orthophoto.
 Does not load the entire orthophoto into memory, but one block at a time."
 function paint!(pc::Cloud, r::Raster,
@@ -159,7 +162,7 @@ function paint!(pc::Cloud, r::Raster,
 
     # 257 would be a full mapping, but 256 is in the standard,
     # see https://groups.google.com/d/msg/lasroom/Th2_-ywc2q8/4JRajnxxO0wJ
-    const colorscale = 0x0100 # = 256
+    # const colorscale = 0x0100 # = 256
     # assume all bands have same block sizes and data types
     @assert GDAL.getrasterdatatype(rband) === GDAL.GDT_Byte
     ncolblock, nrowblock = Ref(Cint(-1)), Ref(Cint(-1))
@@ -170,7 +173,7 @@ function paint!(pc::Cloud, r::Raster,
     # number of blocks in the x and y direction
     nblockx = cld(ncol, ncolblock)
     nblocky = cld(nrow, nrowblock)
-    # number of rows ans columns in the last block of every row or column
+    # number of rows and columns in the last block of every row or column
     ncollastblock = rem(ncol, ncolblock) == 0 ? ncolblock : rem(ncol, ncolblock)
     nrowlastblock = rem(nrow, nrowblock) == 0 ? nrowblock : rem(nrow, nrowblock)
     # asserted it is GDAL.GDT_Byte
@@ -181,8 +184,8 @@ function paint!(pc::Cloud, r::Raster,
     # iterate over blocks
     for blockrow = 1:nblocky
         for blockcol = 1:nblockx
-            nxblockoff = blockcol-1
-            nyblockoff = blockrow-1
+            nxblockoff = blockcol - 1
+            nyblockoff = blockrow - 1
             # possible optimization: only read blocks that contain points?
             GDAL.readblock(rband, nxblockoff, nyblockoff, rblock)
             GDAL.readblock(gband, nxblockoff, nyblockoff, gblock)
@@ -234,7 +237,7 @@ end
 function create_kdtree(cloud::Cloud;
     dim=2,
     metric=Euclidean(),
-    index = 1:length(cloud))
+    index=1:length(cloud))
 
     # create tree
     if dim == 2
@@ -247,12 +250,12 @@ function create_kdtree(cloud::Cloud;
 end
 
 function point_density!(cloud::Cloud, spatialindex::NearestNeighbors.NNTree;
-                        range=(1.0 / (4/3.0 * pi ))^(1.0/3),
+                        range=(1.0 / (4 / 3.0 * pi ))^(1.0 / 3),
                         pointfilter=nothing) # vol = 1m3
     @assert (spatialindex.metric == Euclidean()) && (length(spatialindex.data[1]) == 3)
     n = length(cloud)
     cloud[:point_density] = zeros(Float32, n)
-    vol = 4/3.0 * pi * range^3
+    vol = 4 / 3.0 * pi * range^3
 
     # loop through points and calculate point density
     @showprogress 5 "looping through las points..." for i in 1:n
@@ -265,7 +268,7 @@ function point_density!(cloud::Cloud, spatialindex::NearestNeighbors.NNTree;
 
     nothing
 end
-point_density!(cloud::Cloud; range=(1.0 / (4/3.0 * pi ))^(1.0/3)) = point_density!(cloud, create_kdtree(cloud; dim=3); range=range)
+point_density!(cloud::Cloud; range=(1.0 / (4 / 3.0 * pi ))^(1.0 / 3)) = point_density!(cloud, create_kdtree(cloud; dim=3); range=range)
 
 unique_id!(cloud::Cloud) = cloud[:id] = 1:length(cloud);
 
@@ -285,12 +288,12 @@ function copy_attributes!(cloud_copy_to::Cloud, cloud_copy_from::Cloud; field=:c
         cloud_copy_to[field][idx] = v
     end
     nothing
-end
+    end
 
 """project the values of grid to point in pointcloud based on a raster index"""
 function grid2cloud_attribute!(cloud::Cloud, grid::Array{T,2}, r::Raster, name::Symbol) where T <: Real
     @assert size(grid) == (r.nrow, r.ncol) "raster definition 'r' should have same size as 'grid'"
-    cloud[name] = zeros(T,length(cloud))
+    cloud[name] = zeros(T, length(cloud))
     for icell in 1:length(r)
         v = grid[icell]
         for i in r[icell]

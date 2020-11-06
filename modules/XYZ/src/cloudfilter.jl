@@ -1,4 +1,4 @@
-#=
+#= 
 filter Clouds based on attributes and surrounding points
 Format should be according to:
 
@@ -6,13 +6,13 @@ Format should be according to:
         cloud[subset]
     end
 
-=#
+Dirk Eilander, Martijn Visser, Deltares, 11-2016 =#
 
 "function returns cloud indices based on statistical reduce function "
 function reduce_index(cloud::Cloud, r::Raster;
-    reduceri = reducer_minz_index, # function to find index of min max
-    pointfilter = nothing, # predicate function to filter individual points
-    min_dens = 0) # minimum point density in cell to consider for educed cloud)
+    reduceri=reducer_minz_index, # function to find index of min max
+    pointfilter=nothing, # predicate function to filter individual points
+    min_dens=0) # minimum point density in cell to consider for educed cloud)
 
     subset = Int32[]
     # loop through cells
@@ -46,19 +46,19 @@ end
 
 "function to reduce pointcloud based on statistical min per gridcell"
 function reduce_min(cloud::Cloud, cellsize::Real;
-    pointfilter = nothing, # predicate function to filter individual points
-    min_dens = 0) # minimum point density in cell to consider for reduced cloud
+    pointfilter=nothing, # predicate function to filter individual points
+    min_dens=0) # minimum point density in cell to consider for reduced cloud
 
-    r = define_raster(cloud, cellsize; pointfilter = pointfilter)
-    reduce_min(cloud, r; pointfilter = pointfilter, min_dens = min_dens)
+    r = define_raster(cloud, cellsize; pointfilter=pointfilter)
+    reduce_min(cloud, r; pointfilter=pointfilter, min_dens=min_dens)
 end
 
 "function to reduce pointcloud based on min per gridcell"
 function reduce_min(cloud::Cloud, r::Raster;
-    pointfilter = nothing, # predicate function to filter individual points
-    min_dens = 0) # minimum point density in cell to consider for reduced cloud
+    pointfilter=nothing, # predicate function to filter individual points
+    min_dens=0) # minimum point density in cell to consider for reduced cloud
 
-    subset = reduce_index(cloud, r; reduceri = reducer_minz_index, pointfilter = pointfilter, min_dens = min_dens)
+    subset = reduce_index(cloud, r; reduceri=reducer_minz_index, pointfilter=pointfilter, min_dens=min_dens)
 
     # return raster with statistics, density is saved to last layer
     cloud[subset]
@@ -66,19 +66,19 @@ end
 
 "function to reduce pointcloud based on statistical max per gridcell"
 function reduce_max(cloud::Cloud, cellsize::Real;
-    pointfilter = nothing, # predicate function to filter individual points
-    min_dens = 0) # minimum point density in cell to consider for educed cloud
+    pointfilter=nothing, # predicate function to filter individual points
+    min_dens=0) # minimum point density in cell to consider for educed cloud
 
-    r = define_raster(cloud, cellsize; pointfilter = pointfilter)
-    reduce_max(cloud, r; pointfilter = pointfilter, min_dens = min_dens)
+    r = define_raster(cloud, cellsize; pointfilter=pointfilter)
+    reduce_max(cloud, r; pointfilter=pointfilter, min_dens=min_dens)
 end
 
 "function to reduce pointcloud based on statistical max per gridcell"
 function reduce_max(cloud::Cloud, r::Raster;
-    pointfilter = nothing, # predicate function to filter individual points
-    min_dens = 0) # minimum point density in cell to consider for educed cloud
+    pointfilter=nothing, # predicate function to filter individual points
+    min_dens=0) # minimum point density in cell to consider for educed cloud
 
-    subset = reduce_index(cloud, r; reduceri = reducer_maxz_index, pointfilter = pointfilter, min_dens = min_dens)
+    subset = reduce_index(cloud, r; reduceri=reducer_maxz_index, pointfilter=pointfilter, min_dens=min_dens)
 
     # return raster with statistics, density is saved to last layer
     cloud[subset]
@@ -90,6 +90,6 @@ function reduce_pointfilter(cloud::Cloud, pointfilter)
         (pointfilter != nothing) && (pointfilter(cloud, i) || continue)
         push!(subset, i)
     end
-
+        
     cloud[subset]
 end

@@ -48,10 +48,10 @@ function epsg2wkt(epsg::Nullable{Int})
         return "" # missing projections are represented as empty strings
     else
         epsgcode = get(epsg)
-        srs = GDAL.newspatialreference(C_NULL)
-        GDAL.importfromepsg(srs, epsgcode)
+        srs = GDAL.osrnewspatialreference(C_NULL)
+        GDAL.osrimportfromepsg(srs, epsgcode)
         wkt_ptr = Ref(Cstring(C_NULL))
-        GDAL.exporttowkt(srs, wkt_ptr)
+        GDAL.osrexporttowkt(srs, wkt_ptr)
         return unsafe_string(wkt_ptr[])
     end
 end
@@ -74,9 +74,9 @@ function wkt2epsg(wkt::String)
         return Nullable{Int}() # no projection
     else
         # no projection
-        srs = GDAL.newspatialreference(C_NULL)
-        GDAL.importfromwkt(srs, [wkt])
-        epsg = parse(Int, GDAL.getauthoritycode(srs, C_NULL))
+        srs = GDAL.osrnewspatialreference(C_NULL)
+        GDAL.osrimportfromwkt(srs, [wkt])
+        epsg = Base.parse(Int, GDAL.gdalgetauthoritycode(srs, C_NULL))
         return Nullable{Int}(epsg)
     end
 end
@@ -91,7 +91,8 @@ end
 convert!(Array, arr::AbstractArray, nodata) = arr
 
 # turn 2D DataArray into regular 1 band array
-function gdalarray(da::AbstractArray{T, 2}, nodata) where T
+function gdalarray(da::AbstractArray{T,2}, nodata) where T
+    # TODO more extensive type mapping
     if eltype(da) in (Int32, Int64) # not supported by GDAL
         GDT, totype = GDAL.GDT_Int32, Int32
     elseif eltype(da) == Float32
@@ -100,11 +101,11 @@ function gdalarray(da::AbstractArray{T, 2}, nodata) where T
         GDT, totype = GDAL.GDT_Float64, Float64
     end
     arr = convert!(Array, da, nodata)  # see fallthrough above
-    assert(eltype(da) == totype)
+    @assert eltype(da) == totype
     arr, GDT
 end
 
-const gdt_lookup = Dict{DataType, GDAL.GDALDataType}(
+const gdt_lookup = Dict{DataType,GDAL.GDALDataType}(
     UInt8 => GDAL.GDT_Byte,
     UInt16 => GDAL.GDT_UInt16,
     Int16 => GDAL.GDT_Int16,
@@ -114,7 +115,7 @@ const gdt_lookup = Dict{DataType, GDAL.GDALDataType}(
     Float64 => GDAL.GDT_Float64
 )
 
-const type_lookup = Dict{GDAL.GDALDataType, DataType}(
+const type_lookup = Dict{GDAL.GDALDataType,DataType}(
     GDAL.GDT_Byte => UInt8,
     GDAL.GDT_UInt16 => UInt16,
     GDAL.GDT_Int16 => Int16,
@@ -127,23 +128,23 @@ const type_lookup = Dict{GDAL.GDALDataType, DataType}(
 
 "Get the nodata value from the raster metadata"
 function getnodata(fname::AbstractString)
-    GDAL.allregister()
-    dataset = GDAL.open(fname, GDAL.GA_ReadOnly)
-    band = GDAL.getrasterband(dataset, 1)
-    nodata = GDAL.getrasternodatavalue(band, C_NULL)
-    GDAL.close(dataset)
-    GDAL.destroydrivermanager()
+    GDAL.gdalallregister()
+    dataset = GDAL.gdalopen(fname, GDAL.GA_ReadOnly)
+    band = GDAL.gdalgetrasterband(dataset, 1)
+    nodata = GDAL.gdalgetrasternodatavalue(band, C_NULL)
+    GDAL.gdalclose(dataset)
+    GDAL.gdaldestroydrivermanager()
     nodata
 end
 
 "Set a new nodata value in the raster metadata"
 function setnodata!(fname::AbstractString, nodata::Real)
-  GDAL.allregister()
-  dataset = GDAL.open(fname, GDAL.GA_Update)
-  band = GDAL.getrasterband(dataset, 1)
-  GDAL.setrasternodatavalue(band, nodata)
-  GDAL.close(dataset)
-  GDAL.destroydrivermanager()
+  GDAL.gdalallregister()
+  dataset = GDAL.gdalopen(fname, GDAL.GA_Update)
+  band = GDAL.gdalgetrasterband(dataset, 1)
+  GDAL.gdalsetrasternodatavalue(band, nodata)
+  GDAL.gdalclose(dataset)
+    GDAL.gdaldestroydrivermanager()
   nodata
 end
 
@@ -161,10 +162,10 @@ SortingAlgorithms.uint_mapping(o::Base.Order.Perm{Base.Order.ForwardOrdering,Arr
 
 function driver_list()
     driverlist = String[]
-    for i = 0:(GDAL.getdrivercount() - 1)
-        driver = GDAL.getdriver(i)
+    for i = 0:(GDAL.gdalgetdrivercount() - 1)
+        driver = GDAL.gdalgetdriver(i)
         if driver != C_NULL
-            push!(driverlist, GDAL.getdrivershortname(driver))
+            push!(driverlist, GDAL.gdalgetdrivershortname(driver))
         end
     end
     return driverlist
@@ -187,14 +188,15 @@ function pointsample(band::Ptr{GDAL.GDALRasterBandH}, geotransform::Vector{Float
     y_max = geotransform[4]
     y_res = geotransform[6]
 
-    gdt = GDAL.getrasterdatatype(band)
+    # TODO check the impact of this on performance / provide type stable alternative
+    gdt = GDAL.gdalgetrasterdatatype(band)
     T = type_lookup[gdt]
     valref = Ref(zero(T)) # black
 
     nxoff = Int(fld(x - x_min, x_res))
     nyoff = Int(fld(y - y_max, y_res))
 
-    GDAL.rasterio(band, GDAL.GF_Read, nxoff, nyoff, 1, 1,
+    GDAL.gdalrasterio(band, GDAL.GF_Read, nxoff, nyoff, 1, 1,
                   valref, 1, 1, gdt, 0, 0)
     valref[]
 end
@@ -212,38 +214,41 @@ function pointsample(T::DataType, band::Ptr{GDAL.GDALRasterBandH}, geotransform:
     nxoff = Int(fld(x - x_min, x_res))
     nyoff = Int(fld(y - y_max, y_res))
 
-    GDAL.rasterio(band, GDAL.GF_Read, nxoff, nyoff, 1, 1,
+    GDAL.gdalrasterio(band, GDAL.GF_Read, nxoff, nyoff, 1, 1,
                   valref, 1, 1, gdt, 0, 0)
     valref[]
 end
 
 "Get the data, origin"
 function read_raster(fname::String)
-    GDAL.allregister()
-    dataset = GDAL.open(fname, GDAL.GA_ReadOnly)
-    band = GDAL.getrasterband(dataset, 1) # supports single band only
-    nodata = GDAL.getrasternodatavalue(band, C_NULL)
+    GDAL.gdalallregister()
+    dataset = GDAL.gdalopen(fname, GDAL.GA_ReadOnly)
+    band = GDAL.gdalgetrasterband(dataset, 1) # supports single band only
+    nodata = GDAL.gdalgetrasternodatavalue(band, C_NULL)
 
     # initialize array to read in with correct dimensions and datatype
-    xsize = GDAL.getrasterxsize(dataset)
-    ysize = GDAL.getrasterysize(dataset)
-    gdt = GDAL.getrasterdatatype(band)
+    xsize = GDAL.gdalgetrasterxsize(dataset)
+    ysize = GDAL.gdalgetrasterysize(dataset)
+    gdt = GDAL.gdalgetrasterdatatype(band)
     arrtype = type_lookup[gdt]
     A = zeros(arrtype, xsize, ysize) # dimensions reversed such that we can transpose it back
     # read complete band
-    GDAL.rasterio(band, GDAL.GF_Read, 0, 0, size(A,1), size(A,2),
-        A, size(A,1), size(A,2), gdt, 0, 0)
+    GDAL.gdalrasterio(band, GDAL.GF_Read, 0, 0, size(A, 1), size(A, 2),
+        A, size(A, 1), size(A, 2), gdt, 0, 0)
 
     transform = zeros(6)
-    GDAL.getgeotransform(dataset, transform)
+    GDAL.gdalgetgeotransform(dataset, transform)
     x_min = transform[1]
     y_max = transform[4]
     cellsize = transform[2]
 
-    GDAL.close(dataset)
-    GDAL.destroydrivermanager()
+    proj = GDAL.gdalgetprojectionref(dataset)
+    epsg = wkt2epsg(proj)
 
-    Float64.(A'), x_min, y_max, cellsize, nodata, transform
+    GDAL.gdalclose(dataset)
+    GDAL.gdaldestroydrivermanager()
+
+    Float64.(A'), x_min, y_max, cellsize, nodata, transform, epsg
 end
 
 "Create a GDAL raster dataset"
@@ -253,33 +258,33 @@ function create_raster(
     x_min::Real,
     y_max::Real,
     cellsize::Real,
-    gdaldriver::Ptr{GDAL.GDALDriverH};
+    gdaldriver::GDAL.GDALDriverH;
     epsg::Nullable{Int}=Nullable{Int}(),
-    nodata::Union{Real, Void}=nothing) where T
+    nodata::Union{Real,Nothing}=nothing) where T
 
     bandcount = 1 # this function supports only 1 band rasters
     gdt = gdt_lookup[T]
 
     # Set compression options for GeoTIFFs
-    if gdaldriver == GDAL.getdriverbyname("GTiff")
+    if gdaldriver == GDAL.gdalgetdriverbyname("GTiff")
         options = ["COMPRESS=DEFLATE","TILED=YES"]
     else
         options = String[]
     end
 
-    dstdataset = GDAL.create(gdaldriver, fname, size(A,2), size(A,1), bandcount, gdt, options)
+    dstdataset = GDAL.gdalcreate(gdaldriver, fname, size(A, 2), size(A, 1), bandcount, gdt, options)
 
     transform = Float64[x_min, cellsize, 0.0, y_max, 0.0, -cellsize]
-    GDAL.setgeotransform(dstdataset,transform)
+    GDAL.gdalsetgeotransform(dstdataset, transform)
 
     projection = epsg2wkt(epsg)
-    GDAL.setprojection(dstdataset, projection)
+    GDAL.gdalsetprojection(dstdataset, projection)
 
-    dstband = GDAL.getrasterband(dstdataset,1)
-    GDAL.rasterio(dstband, GDAL.GF_Write, 0, 0, size(A,2), size(A,1),
-        A', size(A,2), size(A,1), gdt, 0, 0)
+    dstband = GDAL.gdalgetrasterband(dstdataset, 1)
+    GDAL.gdalrasterio(dstband, GDAL.GF_Write, 0, 0, size(A, 2), size(A, 1),
+        T.(A'), size(A, 2), size(A, 1), gdt, 0, 0)
 
-    nodata == nothing || GDAL.setrasternodatavalue(dstband, nodata)
+    nodata == nothing || GDAL.gdalsetrasternodatavalue(dstband, nodata)
     dstdataset
 end
 
@@ -287,7 +292,7 @@ end
 function write_raster(fname::String, A::Matrix{T}, x_min::Real, y_max::Real, cellsize::Real;
                          epsg::Nullable{Int}=Nullable{Int}(),
                          driver::String="GTiff",
-                         nodata::Union{Real, Void}=nothing) where T
+                         nodata::Union{Real,Nothing}=nothing) where T
 
      # trying to catch some errors before entering unsafe GDAL territory
      # for safer alternatives look at ArchGDAL.jl
@@ -298,24 +303,24 @@ function write_raster(fname::String, A::Matrix{T}, x_min::Real, y_max::Real, cel
          mkpath(dir)
      end
 
-    GDAL.allregister()
-    gdaldriver = GDAL.getdriverbyname(driver)
+    GDAL.gdalallregister()
+    gdaldriver = GDAL.gdalgetdriverbyname(driver)
 
-    if GDAL.getmetadataitem(gdaldriver, "DCAP_CREATE", "") == "YES"
+    if GDAL.gdalgetmetadataitem(gdaldriver, "DCAP_CREATE", "") == "YES"
         ds = create_raster(fname, A, x_min, y_max, cellsize, gdaldriver; epsg=epsg, nodata=nodata)
-        GDAL.close(ds)
-    elseif GDAL.getmetadataitem(driver, "DCAP_CREATECOPY", "") == "YES"
-        memdriver = GDAL.getdriverbyname("MEM")
+        GDAL.gdalclose(ds)
+    elseif GDAL.gdalgetmetadataitem(driver, "DCAP_CREATECOPY", "") == "YES"
+        memdriver = GDAL.gdalgetdriverbyname("MEM")
         dsmem = create_raster(fname, A, x_min, y_max, cellsize, memdriver; epsg=epsg, nodata=nodata)
         progressfunc = convert(Ptr{GDAL.GDALProgressFunc}, C_NULL)
-        ds = GDAL.createcopy(gdaldriver, fname, dsmem, 0, C_NULL, progressfunc, C_NULL)
-        GDAL.close(dsmem)
-        GDAL.close(ds)
+        ds = GDAL.gdalcreatecopy(gdaldriver, fname, dsmem, 0, C_NULL, progressfunc, C_NULL)
+        GDAL.gdalclose(dsmem)
+        GDAL.gdalclose(ds)
     else
         throw(DomainError("GDAL driver $driver does not support CREATE or CREATECOPY"))
     end
 
-    GDAL.destroydrivermanager()
+    GDAL.gdaldestroydrivermanager()
     nothing
 end
 
@@ -327,7 +332,7 @@ function write_raster(fname::String, A::Matrix{T}, x_min::Real, y_max::Real,
 end
 
 # function write_raster(fname::String, A::DataMatrix{T}, x_min::Real, y_max::Real, cellsize::Real;
-#                          nodata::Union{Real, Void}=nothing,
+#                          nodata::Union{Real, Nothing}=nothing,
 #                          kwargs...) where T
 #      ndval = nodata == nothing ? 0 : nodata
 #      # convert missing data to a normal Matrix

@@ -8,33 +8,33 @@ function to_tif(
     cloud::Cloud,
     cellsize::Real,
     epsg::Int;
-    reducer = minz,
-    pointfilter = nothing,
-    min_dens = 0,
-    nodata = -9999,
-    return_density = false)
+    reducer=minz,
+    pointfilter=nothing,
+    min_dens=0,
+    nodata=-9999,
+    return_density=false)
 
     # create grid definition
-    r = define_raster(cloud, cellsize; epsg=epsg, pointfilter = pointfilter)
+    r = define_raster(cloud, cellsize; epsg=epsg, pointfilter=pointfilter)
 
     to_tif(outDir, filenames, cloud, r;
-        reducer = reducer, pointfilter = nothing, # filter in define_raster cellsize
-        min_dens = min_dens, nodata = nodata, return_density = return_density)
+        reducer=reducer, pointfilter=nothing, # filter in define_raster cellsize
+        min_dens=min_dens, nodata=nodata, return_density=return_density)
 end
 
 "write tiffile from Cloud with given raster definition"
 function to_tif(outDir::String, filenames::Vector{String},
     cloud::Cloud, r::Raster;
-    reducer = minz, pointfilter = nothing,
-    min_dens = 0, nodata = -9999, return_density = false)
+    reducer=minz, pointfilter=nothing,
+    min_dens=0, nodata=-9999, return_density=false)
 
     # make raster from Cloud based on statistical summary per griddcell and point filter
     grid = rasterize(cloud, r;
-        reducer = reducer,
-        pointfilter = pointfilter,
-        min_dens = min_dens,
-        nodata = nodata,
-        return_density = return_density)
+        reducer=reducer,
+        pointfilter=pointfilter,
+        min_dens=min_dens,
+        nodata=nodata,
+        return_density=return_density)
 
     # write to file
     grid2tif(outDir, filenames, r, grid;
@@ -64,7 +64,7 @@ function grid2tif(outDir::String, filename::String, r::Raster, grid::Array; noda
     @assert (ndims(grid) == 2) "Invalid grid size, use a vector of filenames to save layers to multiple files"
     fn = joinpath(outDir, filename)
     grid = copy(grid)
-    grid[r.mask] = nodata
+    grid[r.mask] .= nodata
     write_raster(fn, grid, r.bbox.xmin, r.bbox.ymax, r.cellsize; epsg=XYZ.epsg(r), nodata=nodata)
 end
 
@@ -72,11 +72,11 @@ end
 function Base.merge(h1::LasHeader, h2::LasHeader)
     # check compatibility
     msg = "Cannot merge files, "
-    h1.version_major === h2.version_major || error(msg * "LAS major version mismatch")
-    h1.version_minor === h2.version_minor || error(msg * "LAS minor version mismatch")
-    h1.data_format_id === h2.data_format_id || error(msg * "Point format mismatch")
-    h1.data_format_id === h2.data_format_id || error(msg * "Point format mismatch")
-    h1.data_record_length === h2.data_record_length || error(msg * "Point record length mismatch")
+    h1.version_major === h2.version_major || @error(msg * "LAS major version mismatch")
+    h1.version_minor === h2.version_minor || @error(msg * "LAS minor version mismatch")
+    h1.data_format_id === h2.data_format_id || @error(msg * "Point format mismatch")
+    h1.data_format_id === h2.data_format_id || @error(msg * "Point format mismatch")
+    h1.data_record_length === h2.data_record_length || @error(msg * "Point record length mismatch")
 
     # merge selected fields
     records_count = h1.records_count + h2.records_count
@@ -168,7 +168,7 @@ function to_las(outDir::String, filename::String,
     save(fio, header, cloud)
     nothing
 end
-
+    
 # Add save on Cloud be able to write LAS from Cloud without copies
 function save(f::File{format"LAS"}, header::LasHeader, cloud::Cloud)
     # convert File to String to get a normal IO object
@@ -217,13 +217,13 @@ function savebuf(s::IO, header::LasHeader, cloud::Cloud)
             write(s, take!(buf))
         end
     end
-end
+            end
 
 "general XYZ (csv) writer"
 function to_xyz(outDir::String, filename::String, cloud::Cloud;
-    precision = 2, delimiter=",",
-    attributes = Symbol[],
-    pointfilter = nothing)
+    precision=2, delimiter=",",
+    attributes=Symbol[],
+    pointfilter=nothing)
 
     fn = joinpath(outDir, filename)
     nrow = length(positions(cloud))
@@ -257,7 +257,7 @@ function to_xyz(outDir::String, filename::String, cloud::Cloud;
             end
 
           # write formatted line
-          write(f, string(join(line)[1:end-length(delimiter)], "\n"))
+          write(f, string(join(line)[1:end - length(delimiter)], "\n"))
         end
     end # close file
 end
@@ -265,9 +265,9 @@ end
 "XYZ (csv) writer for points along profile. The coordinates in profile orientation
 are written in extra columns px and py to xyz file"
 function to_xyz(outDir::String, filename::String, cloud::Cloud, prof::Profile;
-    precision = 2, delimiter=",",
-    attributes = Symbol[],
-    pointfilter = nothing)
+    precision=2, delimiter=",",
+    attributes=Symbol[],
+    pointfilter=nothing)
 
     fn = joinpath(outDir, filename)
     nrow = length(prof)
@@ -292,12 +292,12 @@ function to_xyz(outDir::String, filename::String, cloud::Cloud, prof::Profile;
                 push!(line, format(p, precision=precision))
                 push!(line, delimiter)
             end
-            pos = Float64[pointlx(prof)[ip], pointly(prof)[ip]]
+                pos = Float64[pointlx(prof)[ip], pointly(prof)[ip]]
             for p in pos
                 push!(line, format(p, precision=precision))
                 push!(line, delimiter)
             end
-            # read and attribute point data and format
+                # read and attribute point data and format
             if write_attributes
                 for key in attributes
                     if typeof(cloud[key][i]) <: Integer
@@ -310,7 +310,7 @@ function to_xyz(outDir::String, filename::String, cloud::Cloud, prof::Profile;
             end
 
             # write formatted line
-            write(f, string(join(line)[1:end-length(delimiter)], "\n"))
+            write(f, string(join(line)[1:end - length(delimiter)], "\n"))
         end
     end # close file
 end
@@ -324,5 +324,5 @@ function xyz_header(attributes::Vector{}; delimiter=",")
             push!(header, delimiter)
         end
     end
-    string(join(header)[1:end-length(delimiter)], "\n")
+    string(join(header)[1:end - length(delimiter)], "\n")
 end

@@ -1,3 +1,5 @@
+using Nullables
+
 #=
 Functions to create a raster from Clouds.
 
@@ -6,6 +8,21 @@ Cloud.
 rasterize summarizes the Points per cell to one statistical value with and creates
 the actual rasters
 
+Dirk Eilander, Deltares, 11-2016
+
+CHANGELOG
+Version 0.3f
+-grid index is calculated based on coordinates instead of using KDTree (faster)
+-eliminated use of las header. the bbox is derived from spatial index pointcloud
+Version 0.2
+-fixed points on boundaries (top en left are included, right and bottom excluded)
+-created Raster type
+-added pointfilter to define_raster & reg_grid_index
+Version 0.1
+-bugfix for orientation grid
+
+TODO:
+-
 =#
 
 struct Raster{U<:Integer}
@@ -59,9 +76,21 @@ Base.length(r::Raster) = length(r.pointindex)
 Base.size(r::Raster) = (r.nrow, r.ncol)
 Base.eachindex(r::Raster) = eachindex(r.pointindex)
 
-# ind2sub & sub2ind for raster
-Base.ind2sub(r::Raster, i::Integer) = ind2sub((r.nrow, r.ncol), i)
-Base.sub2ind(r::Raster, row::Integer, col::Integer) = sub2ind((r.nrow, r.ncol), row, col)
+function ind2sub(a, i)
+    i2s = CartesianIndices(a)
+    i2s[i].I
+end
+function sub2ind(a,i...)
+   s2i = LinearIndices(a)
+   s2i[i...]
+end
+
+ind2sub(r::Raster, i::Integer) = ind2sub((r.nrow, r.ncol), i)
+function sub2ind(r::Raster, row::Integer, col::Integer)
+    @info "raster" (r.nrow, r.ncol)
+    @info "req" (row, col)
+    sub2ind((r.nrow, r.ncol), row, col)
+end
 
 "transform coordinates to row, col in raster"
 function coords2sub(r::Raster, x::AbstractFloat, y::AbstractFloat)
@@ -75,7 +104,7 @@ function coords2sub(r::Raster, x::AbstractFloat, y::AbstractFloat)
     if y == r.bbox.ymin
       row = row - 1
     end
-    ((col <= 0) || (row <= 0) || (row > r.nrow) || (col > r.ncol)) && error("coordinates outside raster domain")
+    ((col <= 0) || (row <= 0) || (row > r.nrow) || (col > r.ncol)) && @error("coordinates outside raster domain")
     row, col
 end
 
@@ -202,7 +231,7 @@ function define_raster(cloud::Cloud, orig_tile::BoundingBox, overlap::Float64, c
 
     # create mask and mask out overlaps
     mask = trues(nrow, ncol)
-    mask[(overlapcells+1):(end-overlapcells), (overlapcells+1):(end-overlapcells)] = false
+    mask[(overlapcells+1):(end-overlapcells), (overlapcells+1):(end-overlapcells)] .= false
 
     # calculate bounding box including overlap
     bbox = BoundingBox(xmin=orig_tile.xmin - overlapcells * cellsize,
@@ -262,7 +291,7 @@ end
 snap to utm coordinates by default"
 function reg_grid(cloud::Cloud, cellsize::Float64; snapgrid=cellsize)
     # snap bbox to cellsize coordinates (to the outside)
-    # this assumes the coordinates are in cm precision
+    # TODO this assumes the coordinates are in cm precision
     # do the fld with scaled integers to prevent floating point issues
     # like fld(549.0, 0.01) == 54899.0
     if snapgrid != 0
@@ -316,7 +345,7 @@ function reg_grid_index(
 
     n = nrow * ncol # number of cells
     # the idx array gives per LAS point the linear index into the grid it was assigned to
-    idx = Array{Vector{Int32}}(n) # some stay zero because of skipped points
+    idx = Array{Vector{Int32}}(undef,n) # some stay zero because of skipped points
     for icell in 1:n
         idx[icell] = Int32[]
     end
@@ -386,6 +415,8 @@ function reg_grid_index_overlap(
         inright && intop && push!(idx[irighttop], i)
         inleft && intop && push!(idx[ilefttop], i)
 
+        # TODO not sure what this should be in case of overlap
+        # and if it matters
         npoints += 1
     end
 
@@ -436,7 +467,7 @@ end
 function filter_raster(r::Raster, cloud::Cloud, pointfilter)
     n = length(r)
     # create empty index
-    idx = Array{Vector{Int32}}(n) # some stay zero because of skipped points
+    idx = Array{Vector{Int32}}(undef,n) # some stay zero because of skipped points
     for icell in 1:n
         idx[icell] = Int32[]
     end
@@ -481,6 +512,7 @@ function rasterize(cloud::Cloud, r::Raster;
     area = r.cellsize^2
 
     # setup output arrays
+    # TODO don't force to Float32
     raster = fill(Float32(nodata), r.nrow, r.ncol, nlayers)
 
     # loop through cells
@@ -511,7 +543,7 @@ function rasterize(cloud::Cloud, r::Raster;
 
         np < 1 && continue # stat functions don't work on empty arrays
         # set statistics to grid
-        raster[row, col, 1:end-return_density] = reducer(cloud, idx)
+        raster[row, col, 1:end-return_density] .= reducer(cloud, idx)
     end
 
     # return raster with statistics, density is saved to last layer

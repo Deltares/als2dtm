@@ -6,7 +6,7 @@ using PeatUtils
 using TiledIteration
 using XYZ
 using Glob
-using Lumberjack
+# using Lumberjack
 
 const overlap = 0.  # width of overlap [m]
 
@@ -36,7 +36,7 @@ end
 # simplify raster from cloud
 function cloud2arr(cloud::XYZ.Cloud, tile_bbox::XYZ.BoundingBox, cellsize::Float64; pointfilter=nothing, reducer=XYZ.reducer_medz, interpolate=true)
     index = XYZ.define_raster(cloud, tile_bbox, overlap, cellsize; snapgrid=25.0, epsg=epsg, pointfilter=pointfilter)
-    raster = XYZ.rasterize(cloud, index; reducer=reducer, min_dens = 0)[:,:,1]
+    raster = XYZ.rasterize(cloud, index; reducer=reducer, min_dens=0)[:,:,1]
     if interpolate
         raster = GridOperations.interp_missing!(copy(raster), eltype(raster)(nodata); mode="kriging")
     end
@@ -68,18 +68,17 @@ function lidar_pipeline(
 
     out_dir = joinpath(out_dir, fileid)
     isdir(out_dir) || mkpath(out_dir)
-    info("Ouput directory is $(out_dir)")
+    @info("Ouput directory is $(out_dir)")
 
     # Set up Logging
-    add_truck(LumberjackTruck(joinpath(out_dir, "pipeline.log")), "pipelinelogger")
-    info("Processing $(filen)")
-    info("with ground parameters r:$(gf_radius) \t s:$(gf_slope) \t min:$(gf_dh_min) \t max:$(gf_dh_max)")
+    @info("Processing $(filen)")
+    @info("with ground parameters r:$(gf_radius) \t s:$(gf_slope) \t min:$(gf_dh_min) \t max:$(gf_dh_max)")
 
     # read las
-    info("--> read $(fileid)")
-    info("--> write results to $(out_dir)")
+    @info("--> read $(fileid)")
+    @info("--> write results to $(out_dir)")
     cloud, header = XYZ.read_pointcloud(filename)
-    info("  $(cloud)")
+    @info("  $(cloud)")
 
     # reset classification
     XYZ.reset_class!(cloud)
@@ -88,24 +87,24 @@ function lidar_pipeline(
         xmax=header.x_max, ymax=header.y_max)
 
     ## CLASSIFY OUTLIERS
-    info("--> 1.) classify outliers")
+    @info("--> 1.) classify outliers")
     # classify low and high outliers
     # evaluate points per in <cellsize> [m] cells
     # low outliers if a jump larger than <dz> [m] in lowest n <max_outliers> [-] points
     # high outliers if points more than <max_height> [m] above lowest non-outlier point
-        XYZ.classify_outliers!(cloud;
-        cellsize = 100.0,   # cellsize used for evaluation of points
-        dz = 1.0,           # threshold in vertical distance between low points
-        max_outliers = 15,  # max number of outliers in one cell = low  points to be evaluated
+    XYZ.classify_outliers!(cloud;
+        cellsize=100.0,   # cellsize used for evaluation of points
+        dz=1.0,           # threshold in vertical distance between low points
+        max_outliers=15,  # max number of outliers in one cell = low  points to be evaluated
         max_height=100.0)   # threshold in vertical distance for high points
 
     ## CLASSIFY GROUND with Zhang algorithm. use only non-water, non-outlier, last return points
-    info("--> 1.5) intermediate rasters")
+    @info("--> 1.5) intermediate rasters")
 
     # make non-filled raster index for high resolution cells with non-outliers and last return points
-    r = XYZ.define_raster(cloud, tile_bbox, overlap, high_res; pointfilter = XYZ.unclassified_lastreturn, epsg = epsg)
+    r = XYZ.define_raster(cloud, tile_bbox, overlap, high_res; pointfilter=XYZ.unclassified_lastreturn, epsg=epsg)
     if !(r.nrow >= 2 && r.ncol >= 2)
-        info("Defined raster is too small to be classified, skipping")
+        @info("Defined raster is too small to be classified, skipping")
         @show r
         return
     end
@@ -113,21 +112,21 @@ function lidar_pipeline(
     boundarymask_r = trues(r.nrow, r.ncol)
     smallboundarymask_r = trues(r.nrow, r.ncol)
 
-    zmin = XYZ.rasterize(cloud, r; reducer = XYZ.reducer_minz,  pointfilter=nothing)[:,:,1]
+    zmin = XYZ.rasterize(cloud, r; reducer=XYZ.reducer_minz,  pointfilter=nothing)[:,:,1]
     XYZ.grid2tif(out_dir, "$(filen)_zmin.tif", r, zmin; nodata=nodata)
 
     # create las mask and dropouts & vegetation binary images
-    haspoints = Array{Bool}(XYZ.rasterize(cloud, r; reducer = XYZ.reducer_count)[:,:,1] .> 0)
+    haspoints = Array{Bool}(XYZ.rasterize(cloud, r; reducer=XYZ.reducer_count)[:,:,1] .> 0)
     las_mask = GridOperations.create_mask(haspoints)
     dropouts = Array{Bool}(las_mask .& broadcast(~, haspoints))  # nodata cells within las mask
 
     # zmin interpolated surface
     r_filled = XYZ.inpaint_missings_nn(r, cloud)[1]
-    zmin_filled = XYZ.rasterize(cloud, r_filled; reducer = XYZ.reducer_minz,  pointfilter=nothing)[:,:,1]
+    zmin_filled = XYZ.rasterize(cloud, r_filled; reducer=XYZ.reducer_minz,  pointfilter=nothing)[:,:,1]
     XYZ.grid2tif(out_dir, "$(filen)_zmin_nn.tif", r, zmin_filled; nodata=nodata)
 
     ## CLASSIFY GROUND with Zhang algorithm. use only non-water, non-outlier, last return points
-    info("--> 2.) classify terrain (pmf)")
+    @info("--> 2.) classify terrain (pmf)")
 
     # apply zhang to grid
     zmax_pmf, flags = GridOperations.pmf_filter(zmin_filled, boundarymask_r, gf_radius, gf_slope, gf_dh_max, gf_dh_min, r.cellsize)
@@ -140,7 +139,7 @@ function lidar_pipeline(
 
     # filter zmin grid
     zmin_filtered = copy(zmin)
-    zmin_filtered[((bin_vegetation .| dropouts) .| .!smallboundarymask_r)] = nodata
+    zmin_filtered[((bin_vegetation .| dropouts) .| .!smallboundarymask_r)] .= nodata
     XYZ.grid2tif(out_dir, "$(filen)_zmin_filtered.tif", r, zmin_filtered; nodata=nodata)
 
     nothing

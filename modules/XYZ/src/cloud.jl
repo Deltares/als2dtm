@@ -1,3 +1,4 @@
+using Printf
 
 "bounding box representing the smallest straightup rectangle containing all data "
 struct BoundingBox
@@ -15,14 +16,18 @@ function BoundingBox(;xmin=0.0::Float64, ymin=0.0::Float64, zmin=0.0::Float64,
     BoundingBox(xmin, ymin, zmin, xmax, ymax, zmax)
 end
 
-function Base.show(io::IO, bbox::BoundingBox)
-    print(io, @sprintf "xmin=%.1f, " bbox.xmin )
-    print(io, @sprintf "xmax=%.1f, " bbox.xmax )
-    print(io, @sprintf "ymin=%.1f, " bbox.ymin )
-    print(io, @sprintf "ymax=%.1f, " bbox.ymax )
-    print(io, @sprintf "zmin=%.2f, " bbox.zmin )
-    print(io, @sprintf "zmax=%.2f" bbox.zmax )
-end
+# #WARNING: Base.@sprintf is deprecated: it has been moved to the standard library package `Printf`.
+# #Add `using Printf` to your imports.
+# #https://docs.julialang.org/en/v1/stdlib/Printf/
+
+# function Base.show(io::IO, bbox::BoundingBox)
+#     print(io, @printf "xmin=%.1f, " bbox.xmin )
+#     print(io, @printf "xmax=%.1f, " bbox.xmax )
+#     print(io, @printf "ymin=%.1f, " bbox.ymin )
+#     print(io, @printf "ymax=%.1f, " bbox.ymax )
+#     print(io, @printf "zmin=%.2f, " bbox.zmin )
+#     print(io, @printf "zmax=%.2f" bbox.zmax )
+# end
 
 """Cloud is a point cloud container type similar to Clouds' Cloud, without
 a spatial index, but with a simple bounding box that is kept up to date."""
@@ -59,7 +64,7 @@ function calc_bbox(P::Vector{SVector{3,Float64}})
         zmin = min(zmin, p[3])
         zmax = max(zmax, p[3])
     end
-    BoundingBox(xmin=xmin,ymin=ymin,zmin=zmin,xmax=xmax,ymax=ymax,zmax=zmax)
+    BoundingBox(xmin=xmin, ymin=ymin, zmin=zmin, xmax=xmax, ymax=ymax, zmax=zmax)
 end
 
 "Calculate bounding box of the positions"
@@ -73,7 +78,7 @@ function calc_bbox(P::Vector{MVector{3,Float64}})
         zmin = min(zmin, p[3])
         zmax = max(zmax, p[3])
     end
-    BoundingBox(xmin=xmin,ymin=ymin,zmin=zmin,xmax=xmax,ymax=ymax,zmax=zmax)
+    BoundingBox(xmin=xmin, ymin=ymin, zmin=zmin, xmax=xmax, ymax=ymax, zmax=zmax)
 end
 
 "Calculate bounding box of the point cloud"
@@ -92,11 +97,11 @@ end
 function Base.getindex(cloud::Cloud, I)
     pos = positions(cloud)[I]
     attrs = Dict{Symbol,Vector}()
-    for (k,v) in attributes(cloud)
+    for (k, v) in attributes(cloud)
         attrs[k] = v[I]
     end
     Cloud(pos, attrs)
-end
+        end
 
 "Get a point cloud attribute by indexing with a `Symbol`"
 Base.getindex(cloud::Cloud, attr::Symbol) = attributes(cloud)[attr]

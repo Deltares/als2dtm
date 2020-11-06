@@ -20,7 +20,7 @@ workdir = dirname(@__FILE__)
 
     cloudp1 = cloud[1:1]
     @test length(cloudp1) == 1
-    @test XYZ.positions(cloudp1) == [SVector{3, Float64}(1.44013394e6, 375000.23, 846.66)]
+    @test XYZ.positions(cloudp1) == [SVector{3,Float64}(1.44013394e6, 375000.23, 846.66)]
     @test cloudp1[:intensity] == [0x00fa]
     @test cloudp1[:scan_angle] == [Int8(0)]
     @test cloudp1[:user_data] == [0x00]
@@ -42,10 +42,10 @@ end
     @test all(c -> c == 0x00, cloud[:classification])
 
     XYZ.classify_outliers!(cloud;
-        cellsize = 100.0,   # cellsize used for evaluation of points
-        dz = 1.0,           # threshold in vertical distance between low points
-        max_outliers = 15,  # max number of outliers in one cell = low  points to be evaluated
-        max_height = 100.0) # threshold in vertical distance for high points
+        cellsize=100.0,   # cellsize used for evaluation of points
+        dz=1.0,           # threshold in vertical distance between low points
+        max_outliers=15,  # max number of outliers in one cell = low  points to be evaluated
+        max_height=100.0) # threshold in vertical distance for high points
 
     low_noise = UInt8(7) # from ASPRS Standard LIDAR Point Classes
     high_noise = UInt8(18) # from ASPRS Standard LIDAR Point Classes (LAS 1.4)

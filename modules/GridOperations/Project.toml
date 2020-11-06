@@ -1,0 +1,20 @@
+name = "GridOperations"
+uuid = "e6005643-8f00-58df-85c5-7d93a3520d70"
+authors = ["Maarten Pronk <git@evetion.nl>"]
+version = "0.1.0"
+
+[deps]
+ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
+Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
+Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
+Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
+ImageFiltering = "6a3955dd-da59-5b1f-98d4-e7296123deb5"
+Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
+NearestNeighbors = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

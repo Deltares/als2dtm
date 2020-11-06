@@ -52,4 +52,4 @@ function colorize(A::AbstractArray;
     cimg
 end
 
-colorize(A::Union{BitMatrix, Matrix{Bool}}) = Gray.(A)
+colorize(A::Union{BitMatrix,Matrix{Bool}}) = Gray.(A)

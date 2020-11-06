@@ -1,9 +1,14 @@
+#= 
+TODO
+update header based on Clouds =#
+
+
 """Prepare and allocate an empty dict to be used as a Cloud attribute table
 based on a list of needed attributes"""
 function prepare_attributes(pointtype::Type{T}, n::Integer) where T <: LasPoint
     n = Int(n)  # cannot construct BitVector(n) with n <: UInt32 (fix in julia)
     # create dict with all Las point format 0 properties
-    attr = Dict{Symbol, Vector}(
+    attr = Dict{Symbol,Vector}(
         :intensity => zeros(UInt16, n),
         :return_number => zeros(UInt8, n),
         :number_of_returns => zeros(UInt8, n),
@@ -32,7 +37,7 @@ function add_point!(
     lasp::LasPoint,
     header::LasHeader,
     pointdata::Vector{SVector{3,Float64}},
-    attr::Dict{Symbol, Vector},
+    attr::Dict{Symbol,Vector},
     i::Integer,
     pointtype::Type{T}) where T <: LasPoint
 
@@ -61,7 +66,7 @@ function add_point!(
     end
 end
 
-function read_pointcloud(s::Union{Stream{format"LAS"}, Pipe})
+function read_pointcloud(s::Union{Stream{format"LAS"},Base.Process})
     LasIO.skiplasf(s)
     header = read(s, LasHeader)
 
@@ -69,10 +74,10 @@ function read_pointcloud(s::Union{Stream{format"LAS"}, Pipe})
     pointtype = LasIO.pointformat(header)
 
     # pre allocate the parts that will go into the Cloud
-    pointdata = Vector{SVector{3,Float64}}(n)
+    pointdata = Vector{SVector{3,Float64}}(undef, n)
     attr = prepare_attributes(pointtype, n)
 
-    @showprogress 1 "Reading pointcloud..." for i=1:n
+    @showprogress 1 "Reading pointcloud..." for i = 1:n
         lasp = read(s, pointtype)
         add_point!(lasp, header, pointdata, attr, i, pointtype)
     end
