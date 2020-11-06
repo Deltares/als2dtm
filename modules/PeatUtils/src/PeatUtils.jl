@@ -76,7 +76,7 @@ function wkt2epsg(wkt::String)
         # no projection
         srs = GDAL.osrnewspatialreference(C_NULL)
         GDAL.osrimportfromwkt(srs, [wkt])
-        epsg = Base.parse(Int, GDAL.gdalgetauthoritycode(srs, C_NULL))
+        epsg = Base.parse(Int, GDAL.osrgetauthoritycode(srs, C_NULL))
         return Nullable{Int}(epsg)
     end
 end
@@ -169,7 +169,7 @@ function driver_list()
         end
     end
     return driverlist
-end
+    end
 
 "check if a point falls outside a bounding box"
 function outside(x_min, y_min, x_max, y_max, x, y)
