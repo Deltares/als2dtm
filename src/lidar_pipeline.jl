@@ -1,10 +1,11 @@
+
+using GridOperations
+using PeatUtils
+using XYZ
 using Compat
 using GeoJSON
-using GridOperations
 using LibGEOS
-using PeatUtils
 using TiledIteration
-using XYZ
 using Glob
 # using Lumberjack
 
