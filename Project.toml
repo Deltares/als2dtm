@@ -1,0 +1,10 @@
+name = "als2dtm"
+uuid = "3a9112f7-18f6-4a9f-85d9-7883844e0832"
+authors = ["Maarten Pronk <git@evetion.nl>"]
+version = "0.1.0"
+
+[deps]
+GridOperations = "b143e5fc-ff20-4315-9f24-efeb1a6ca5aa"
+IDWInterpolations = "e6005643-8f00-58df-85c5-7d93a3520d70"
+PeatUtils = "af5738cf-9e84-45b0-aaaa-0b4543bab6c4"
+XYZ = "bf46f615-9152-46c8-897b-96069253f25d"
