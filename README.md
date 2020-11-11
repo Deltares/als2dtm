@@ -26,6 +26,10 @@ Note that for using `.laz` files, we require a working version of `laszip` in yo
 
 Run julia with `julia --project=<unzipped source code location>`.
 
+If you run this for the first time, you need to download all the required packages. Please type:
+`] instantiate` and hit enter (you can exit package mode by typing backspace afterwards). 
+Now you can use this package, on the first time this will start *precompiling*, which can take some time.
+
 ```julia
 using als2dtm
 
