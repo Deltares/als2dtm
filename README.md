@@ -15,19 +15,16 @@ We advise to use our derived, more generic open-source packages:
 
 
 ## Installation
-Download Julia 0.6 @ https://julialang.org/downloads/oldreleases.html.
-Run the `install.jl` script to install necessary packages.
+Download Julia 1.5.3 @ https://julialang.org/downloads/#current_stable_release and install it.
+You should download this source code as zip @ https://github.com/Deltares/als2dtm/archive/julia-update.zip and unzip it somewhere.
 
-For using the modules with your own scripts, add the Modules folder to your `LOADPATH` by using:
-`push!(LOAD_PATH, "modules")`
-
-For using `.laz` files, this requires a working version of `laszip` in your path.
+Note that for using `.laz` files, we require a working version of `laszip` in your path.
 
 ## Usage
 ![pmf](figures/displaz.png)
 *ALS data example: data/small.laz Note the low vegetation on the mounds. Visualization in Displaz.*
 
-Run julia with `julia --project=<this folder>`.
+Run julia with `julia --project=<unzipped source code location>`.
 
 ```julia
 using als2dtm
