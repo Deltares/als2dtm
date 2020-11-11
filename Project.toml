@@ -4,6 +4,7 @@ authors = ["Maarten Pronk <git@evetion.nl>"]
 version = "0.1.0"
 
 [deps]
+Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
 GridOperations = "b143e5fc-ff20-4315-9f24-efeb1a6ca5aa"
 IDWInterpolations = "e6005643-8f00-58df-85c5-7d93a3520d70"
 PeatUtils = "af5738cf-9e84-45b0-aaaa-0b4543bab6c4"

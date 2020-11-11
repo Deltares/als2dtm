@@ -11,7 +11,6 @@ export interp_missing!, create_mask, interp2d,
 using Colors
 using ColorSchemes
 using Compat
-using GeoStats
 using ImageFiltering
 using Images
 using NearestNeighbors

@@ -3,11 +3,6 @@ using GridOperations
 using PeatUtils
 using XYZ
 using Compat
-using GeoJSON
-using LibGEOS
-using TiledIteration
-using Glob
-# using Lumberjack
 
 const overlap = 0.  # width of overlap [m]
 

@@ -27,10 +27,10 @@ For using `.laz` files, this requires a working version of `laszip` in your path
 ![pmf](figures/displaz.png)
 *ALS data example: data/small.laz Note the low vegetation on the mounds. Visualization in Displaz.*
 
+Run julia with `julia --project=<this folder>`.
 
 ```julia
-push!(LOAD_PATH, "modules")
-include("lidar_pipeline.jl")
+using als2dtm
 
 infile = "data/small.laz"
 outfolder = "output/"

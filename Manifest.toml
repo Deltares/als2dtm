@@ -219,20 +219,14 @@ uuid = "a2bd30eb-e257-5431-a919-1863eab51364"
 version = "1.0.2"
 
 [[GridOperations]]
-deps = ["ColorSchemes", "Colors", "Combinatorics", "Compat", "ImageFiltering", "Images", "NearestNeighbors", "ProgressMeter"]
-git-tree-sha1 = "35cd94951530910916ae8a05fd2a8578826d9d58"
-repo-rev = "julia-update"
-repo-subdir = "modules/GridOperations"
-repo-url = "."
+deps = ["ColorSchemes", "Colors", "Combinatorics", "Compat", "ImageFiltering", "Images", "LinearAlgebra", "NearestNeighbors", "ProgressMeter"]
+path = "modules/GridOperations"
 uuid = "b143e5fc-ff20-4315-9f24-efeb1a6ca5aa"
 version = "0.1.0"
 
 [[IDWInterpolations]]
 deps = ["Distances", "LinearAlgebra", "NearestNeighbors", "ProgressMeter"]
-git-tree-sha1 = "a5f2c16c05bd9438d6d99c69288278e930ca8b36"
-repo-rev = "julia-update"
-repo-subdir = "modules/IDWInterpolations"
-repo-url = "."
+path = "modules/IDWInterpolations"
 uuid = "e6005643-8f00-58df-85c5-7d93a3520d70"
 version = "0.1.0"
 
@@ -371,9 +365,9 @@ version = "0.3.6"
 
 [[LibCURL_jll]]
 deps = ["LibSSH2_jll", "Libdl", "MbedTLS_jll", "Pkg", "Zlib_jll", "nghttp2_jll"]
-git-tree-sha1 = "388cfc6274cb2a096fa62c6433c9369167d6d0c1"
+git-tree-sha1 = "897d962c20031e6012bba7b3dcb7a667170dad17"
 uuid = "deac9b47-8bc7-5906-a0fe-35ac56dc84c0"
-version = "7.71.1+0"
+version = "7.70.0+2"
 
 [[LibGit2]]
 deps = ["Printf"]
@@ -538,16 +532,13 @@ version = "0.12.1"
 
 [[Parsers]]
 deps = ["Dates"]
-git-tree-sha1 = "6fa4202675c05ba0f8268a6ddf07606350eda3ce"
+git-tree-sha1 = "b417be52e8be24e916e34b3d70ec2da7bdf56a68"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "1.0.11"
+version = "1.0.12"
 
 [[PeatUtils]]
 deps = ["Compat", "GDAL", "GeoJSON", "JSON", "Nullables", "SortingAlgorithms"]
-git-tree-sha1 = "034c8d41ffe96be75ceef713197fc1d6f19fca9c"
-repo-rev = "julia-update"
-repo-subdir = "modules/PeatUtils"
-repo-url = "."
+path = "modules/PeatUtils"
 uuid = "af5738cf-9e84-45b0-aaaa-0b4543bab6c4"
 version = "0.1.0"
 
@@ -710,11 +701,8 @@ uuid = "aed1982a-8fda-507f-9586-7b0439959a61"
 version = "1.1.33+4"
 
 [[XYZ]]
-deps = ["ColorTypes", "Colors", "Compat", "FileIO", "FixedPointNumbers", "GDAL", "GeoJSON", "JSON", "LasIO", "NearestNeighbors", "Nullables", "ProgressMeter", "SortingAlgorithms", "StaticArrays", "StatsBase"]
-git-tree-sha1 = "b32d32b543930b34451fb1a8f130718c4bba2959"
-repo-rev = "julia-update"
-repo-subdir = "modules/XYZ"
-repo-url = "."
+deps = ["ColorTypes", "Colors", "Compat", "FileIO", "FixedPointNumbers", "GDAL", "GeoJSON", "JSON", "LasIO", "NearestNeighbors", "Nullables", "PeatUtils", "Printf", "ProgressMeter", "SortingAlgorithms", "StaticArrays", "Statistics", "StatsBase"]
+path = "modules/XYZ"
 uuid = "bf46f615-9152-46c8-897b-96069253f25d"
 version = "0.1.0"
 

@@ -53,10 +53,7 @@ rd, x_min, y_max, cellsize, nodata_in, transform, epsg = read_raster(fname_in)
 
 # change any NaN to the given nodata value (easier with PCRaster)
 rd[isnan.(rd)] .= nodata
-# println(rd)
-println(size(rd))
-println(nodata)
-println(nodata_in)
+
 # the supplied nodata value overrides the input raster nodata value
 rd[rd .== nodata_in] .= nodata
 searchradius_cells = searchradius_m / cellsize
