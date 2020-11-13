@@ -42,8 +42,8 @@ function cloud2arr(cloud::XYZ.Cloud, tile_bbox::XYZ.BoundingBox, cellsize::Float
 end
 
 # simplify tif creation
-function cloud2tif(folder::String, fn::String, cloud::XYZ.Cloud, tile_bbox::XYZ.BoundingBox, cellsize::Float64, filter, reducer; interpolate=false)
-    raster, index = cloud2arr(cloud, tile_bbox, cellsize, pointfilter=filter, reducer=reducer, interpolate=interpolate)
+function cloud2tif(folder::String, fn::String, cloud::XYZ.Cloud, tile_bbox::XYZ.BoundingBox, cellsize::Float64, epsg::Int, filter, reducer; interpolate=false)
+    raster, index = cloud2arr(cloud, tile_bbox, cellsize, epsg, pointfilter=filter, reducer=reducer, interpolate=interpolate)
     XYZ.grid2tif(folder, fn, index, raster; nodata=nodata)
 end
 
@@ -57,6 +57,8 @@ function lidar_pipeline(
         gf_slope::Float64,
         gf_dh_max::Float64,
         gf_dh_min::Float64,
+        high_res::Float64,
+        low_res::Float64,
         )
 
     # file admin
@@ -144,19 +146,12 @@ function lidar_pipeline(
     r_pmf = XYZ.filter_raster(r, cloud, XYZ.ground)
     cloud_min = XYZ.reduce_min(cloud, r_pmf)
 
-    let r_terrain, dtm_lowres, cs = 100.0
+    let r_terrain, dtm_lowres, cs = low_res
         r_terrain = XYZ.define_raster(cloud_min, tile_bbox, overlap, cs; snapgrid=low_res, epsg=epsg,
             pointfilter=XYZ.ground)
         dtm_lowres = XYZ.rasterize(cloud_min, r_terrain; reducer=XYZ.reducer_medz,
             min_dens=min_points / (cs^2))[:,:,1]
-        XYZ.grid2tif(out_dir, "$(filen)_dtm_including_water_$(cs)m.tif", r_terrain, dtm_lowres; nodata=nodata)
-    end
-
-    @info("--> several lower resolution dtms")
-    for res in [5., 25., 100., 200.]
-        for reducer in [XYZ.reducer_medz, XYZ.reducer_maxz, XYZ.reducer_minz]
-            cloud2tif(out_dir, "$(filen)_ground_including_water_dtm_$(reducer)_$res.tif", cloud, tile_bbox, res, epsg, XYZ.ground, reducer)
-        end
+        XYZ.grid2tif(out_dir, "$(filen)_dtm_$(cs)m.tif", r_terrain, dtm_lowres; nodata=nodata)
     end
 
     nothing
