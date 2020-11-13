@@ -7,9 +7,11 @@ using Compat
 const overlap = 0.  # width of overlap [m]
 
 # general settings
+const epsg = 32748  # UTM 48S
 const high_res = 1.0  # cellsize for water grids & and high res dtm [m]
+const low_res = 25.0  # cellsize for water grids & and high res dtm [m]
 const nodata = -9999.0
-
+const min_points = 0.5
 
 function xyvec(cloud::XYZ.Cloud, sampleratio::Float64)
     n = length(cloud.positions)
@@ -30,7 +32,7 @@ function xyvec(cloud::XYZ.Cloud, sampleratio::Float64)
 end
 
 # simplify raster from cloud
-function cloud2arr(cloud::XYZ.Cloud, tile_bbox::XYZ.BoundingBox, cellsize::Float64; pointfilter=nothing, reducer=XYZ.reducer_medz, interpolate=true)
+function cloud2arr(cloud::XYZ.Cloud, tile_bbox::XYZ.BoundingBox, cellsize::Float64, epsg::Int; pointfilter=nothing, reducer=XYZ.reducer_medz, interpolate=true)
     index = XYZ.define_raster(cloud, tile_bbox, overlap, cellsize; snapgrid=25.0, epsg=epsg, pointfilter=pointfilter)
     raster = XYZ.rasterize(cloud, index; reducer=reducer, min_dens=0)[:,:,1]
     if interpolate
@@ -137,6 +139,25 @@ function lidar_pipeline(
     zmin_filtered = copy(zmin)
     zmin_filtered[((bin_vegetation .| dropouts) .| .!smallboundarymask_r)] .= nodata
     XYZ.grid2tif(out_dir, "$(filen)_zmin_filtered.tif", r, zmin_filtered; nodata=nodata)
+
+    # Apply classification to pointcloud
+    r_pmf = XYZ.filter_raster(r, cloud, XYZ.ground)
+    cloud_min = XYZ.reduce_min(cloud, r_pmf)
+
+    let r_terrain, dtm_lowres, cs = 100.0
+        r_terrain = XYZ.define_raster(cloud_min, tile_bbox, overlap, cs; snapgrid=low_res, epsg=epsg,
+            pointfilter=XYZ.ground)
+        dtm_lowres = XYZ.rasterize(cloud_min, r_terrain; reducer=XYZ.reducer_medz,
+            min_dens=min_points / (cs^2))[:,:,1]
+        XYZ.grid2tif(out_dir, "$(filen)_dtm_including_water_$(cs)m.tif", r_terrain, dtm_lowres; nodata=nodata)
+    end
+
+    @info("--> several lower resolution dtms")
+    for res in [5., 25., 100., 200.]
+        for reducer in [XYZ.reducer_medz, XYZ.reducer_maxz, XYZ.reducer_minz]
+            cloud2tif(out_dir, "$(filen)_ground_including_water_dtm_$(reducer)_$res.tif", cloud, tile_bbox, res, epsg, XYZ.ground, reducer)
+        end
+    end
 
     nothing
 end
