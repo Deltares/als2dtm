@@ -119,7 +119,7 @@ Read a pointcloud stored in LAS or LAZ format to a Cloud
 function read_pointcloud(filepath::AbstractString)
     # converts to FileIO File LAS or LAZ
     # such that it dispatches to the right read_pointcloud
-    fio = query(filepath)
+    fio = query(filepath, checkfile=false)
     read_pointcloud(fio)
 end
 

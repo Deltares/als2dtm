@@ -118,6 +118,11 @@ git-tree-sha1 = "fb0aa371da91c1ff9dc7fbed6122d3e411420b9c"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 version = "0.18.8"
 
+[[DataValueInterfaces]]
+git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
+uuid = "e2d170a0-9d28-54be-80f0-106bbe20a464"
+version = "1.0.0"
+
 [[Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -340,6 +345,11 @@ git-tree-sha1 = "05110a2ab1fc5f932622ffea2a003221f4782c18"
 uuid = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
 version = "1.3.0"
 
+[[IteratorInterfaceExtensions]]
+git-tree-sha1 = "a3f24677c21f5bbe9d2a714f95dcd58337fb2856"
+uuid = "82899510-4779-5014-852e-03e436cf321d"
+version = "1.0.0"
+
 [[JLLWrappers]]
 git-tree-sha1 = "c70593677bbf2c3ccab4f7500d0f4dacfff7b75c"
 uuid = "692b3bcd-3c85-4b1f-b108-f13ce0eb3210"
@@ -363,11 +373,23 @@ git-tree-sha1 = "9aff0587d9603ea0de2c6f6300d9f9492bbefbd3"
 uuid = "aacddb02-875f-59d6-b918-886e6ef4fbf8"
 version = "2.0.1+3"
 
+[[LASzip_jll]]
+deps = ["Libdl", "Pkg"]
+git-tree-sha1 = "2c1d8cb40c67da920cfa397abe9c9df6cdaa79b1"
+uuid = "8372b9c3-1e34-5cc3-bfab-1a98e101de11"
+version = "3.4.3+0"
+
 [[LasIO]]
 deps = ["ColorTypes", "Dates", "FileIO", "FixedPointNumbers", "GeometryTypes", "Mmap"]
 git-tree-sha1 = "ac629f141feb057377e37f6b2ac7ac86841add82"
 uuid = "570499db-eae3-5eb6-bdd5-a5326f375e68"
 version = "0.3.6"
+
+[[LazIO]]
+deps = ["FileIO", "FixedPointNumbers", "LASzip_jll", "LasIO", "Libdl", "Parameters", "Tables", "Test"]
+git-tree-sha1 = "3fce9d954fc2ecfde27e88cef20712c8c8e5e748"
+uuid = "c3605908-9f0f-11e8-0a72-0d361c15a277"
+version = "0.2.1"
 
 [[LibCURL_jll]]
 deps = ["LibSSH2_jll", "Libdl", "MbedTLS_jll", "Pkg", "Zlib_jll", "nghttp2_jll"]
@@ -666,6 +688,18 @@ git-tree-sha1 = "1ed04f622a39d2e5a6747c3a70be040c00333933"
 uuid = "856f2bd8-1eba-4b0a-8007-ebc267875bd4"
 version = "1.1.0"
 
+[[TableTraits]]
+deps = ["IteratorInterfaceExtensions"]
+git-tree-sha1 = "b1ad568ba658d8cbb3b892ed5380a6f3e781a81e"
+uuid = "3783bdb8-4a98-5b6b-af9a-565f29a5fe9c"
+version = "1.0.0"
+
+[[Tables]]
+deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "LinearAlgebra", "TableTraits", "Test"]
+git-tree-sha1 = "5131a624173d532299d1c7eb05341c18112b21b8"
+uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
+version = "1.2.1"
+
 [[Test]]
 deps = ["Distributed", "InteractiveUtils", "Logging", "Random"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
@@ -712,7 +746,7 @@ uuid = "aed1982a-8fda-507f-9586-7b0439959a61"
 version = "1.1.33+4"
 
 [[XYZ]]
-deps = ["ColorTypes", "Colors", "Compat", "FileIO", "FixedPointNumbers", "GDAL", "GeoJSON", "JSON", "LasIO", "NearestNeighbors", "Nullables", "PeatUtils", "Printf", "ProgressMeter", "SortingAlgorithms", "StaticArrays", "Statistics", "StatsBase"]
+deps = ["ColorTypes", "Colors", "Compat", "FileIO", "FixedPointNumbers", "GDAL", "GeoJSON", "JSON", "LasIO", "LazIO", "NearestNeighbors", "Nullables", "PeatUtils", "Printf", "ProgressMeter", "SortingAlgorithms", "StaticArrays", "Statistics", "StatsBase"]
 path = "modules/XYZ"
 uuid = "bf46f615-9152-46c8-897b-96069253f25d"
 version = "0.1.0"
