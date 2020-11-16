@@ -1,6 +1,6 @@
 using Nullables
 
-#=
+#= 
 Functions to create a raster from Clouds.
 
 reg_grid and reg_grid_index create a link between raster cells and Points in the
@@ -22,10 +22,9 @@ Version 0.1
 -bugfix for orientation grid
 
 TODO:
--
-=#
+- =#
 
-struct Raster{U<:Integer}
+struct Raster{U <: Integer}
     pointindex::Vector{Vector{U}}
     nrow::Int
     ncol::Int
@@ -46,7 +45,7 @@ function Raster(
     npoints::Int
     ) where U <: Integer
 
-    Raster(pointindex,nrow,ncol,bbox,cellsize,epsg, npoints, falses(nrow,ncol))
+    Raster(pointindex, nrow, ncol, bbox, cellsize, epsg, npoints, falses(nrow, ncol))
 end
 
 function Raster(
@@ -60,7 +59,7 @@ function Raster(
     mask::BitArray{2}
     ) where U <: Integer
 
-    Raster(pointindex,nrow,ncol,bbox,cellsize,Nullable{Int}(epsg), npoints, mask)
+    Raster(pointindex, nrow, ncol, bbox, cellsize, Nullable{Int}(epsg), npoints, mask)
 end
 
 function Base.show(io::IO, r::Raster)
@@ -80,9 +79,9 @@ function ind2sub(a, i)
     i2s = CartesianIndices(a)
     i2s[i].I
 end
-function sub2ind(a,i...)
-   s2i = LinearIndices(a)
-   s2i[i...]
+function sub2ind(a, i...)
+    s2i = LinearIndices(a)
+    s2i[i...]
 end
 
 ind2sub(r::Raster, i::Integer) = ind2sub((r.nrow, r.ncol), i)
@@ -95,8 +94,8 @@ end
 "transform coordinates to row, col in raster"
 function coords2sub(r::Raster, x::AbstractFloat, y::AbstractFloat)
     # cells include top en left boundaries
-    col = Int(fld(x - r.bbox.xmin, r.cellsize)+1)
-    row = Int(fld(r.bbox.ymax - y, r.cellsize)+1)
+    col = Int(fld(x - r.bbox.xmin, r.cellsize) + 1)
+    row = Int(fld(r.bbox.ymax - y, r.cellsize) + 1)
     # include points on lower and right bbox boundaries
     if x == r.bbox.xmax
       col = col - 1
@@ -126,9 +125,10 @@ function coords2ind(bbox::BoundingBox,
     x::AbstractFloat,
     y::AbstractFloat)
 
+    # (bbox.xmin < p.X <= bbox.xmax && bbox.ymin < p.Y <= bbox.ymax ) || continue # && u_min_z <= p.Z <= u_max_z) || continue
     # cells include bottom and left boundaries
-    col = Int(fld(x - bbox.xmin, cellsize)+1)
-    row = Int(fld(bbox.ymax - y, cellsize)+1)
+    col = Int(fld(x - bbox.xmin, cellsize) + 1)
+    row = Int(fld(bbox.ymax - y, cellsize) + 1)
     # include points on lower and right bbox boundaries
     if x == bbox.xmax
       col = col - 1
@@ -137,6 +137,9 @@ function coords2ind(bbox::BoundingBox,
       row = row - 1
     end
     isinside = !((col <= 0) || (row <= 0) || (row > nrow) || (col > ncol))
+    if !isinside
+        row, col = 1, 1
+    end
     sub2ind((nrow, ncol), row, col), isinside
 end
 
@@ -147,11 +150,11 @@ function coords2ind_overlap(bbox::BoundingBox,
     cellsize::Float64,
     x::AbstractFloat,
     y::AbstractFloat;
-    overlap = 100.0)
+    overlap=100.0)
 
     # cells include bottom and left boundaries
-    col = Int(fld(x - bbox.xmin, cellsize)+1)
-    row = Int(fld(bbox.ymax - y, cellsize)+1)
+    col = Int(fld(x - bbox.xmin, cellsize) + 1)
+    row = Int(fld(bbox.ymax - y, cellsize) + 1)
     # include points on lower and right bbox boundaries
     # if x == bbox.xmax
     #   col = col - 1
@@ -208,7 +211,7 @@ end
 
 function rastercellcoordinates(r::Raster)
     ncells = r.ncol * r.nrow
-    cellcoords = Vector{SVector{2, Float64}}()
+    cellcoords = Vector{SVector{2,Float64}}()
     sizehint!(cellcoords, ncells)
     for icell in 1:ncells
         coords = SVector(ind2coords(r.bbox, r.nrow, r.ncol, r.cellsize, icell))
@@ -221,7 +224,7 @@ end
 function define_raster(cloud::Cloud, orig_tile::BoundingBox, overlap::Float64, cellsize::Float64;
     snapgrid=cellsize,
     epsg=Nullable{Int}(),
-    pointfilter = nothing)
+    pointfilter=nothing)
     # determine inner col and rows and its outer col and rows
     ocol = round(Int, abs(orig_tile.xmax - orig_tile.xmin) / cellsize)
     orow = round(Int, abs(orig_tile.ymax - orig_tile.ymin) / cellsize)
@@ -231,7 +234,7 @@ function define_raster(cloud::Cloud, orig_tile::BoundingBox, overlap::Float64, c
 
     # create mask and mask out overlaps
     mask = trues(nrow, ncol)
-    mask[(overlapcells+1):(end-overlapcells), (overlapcells+1):(end-overlapcells)] .= false
+    mask[(overlapcells + 1):(end - overlapcells), (overlapcells + 1):(end - overlapcells)] .= false
 
     # calculate bounding box including overlap
     bbox = BoundingBox(xmin=orig_tile.xmin - overlapcells * cellsize,
@@ -242,7 +245,7 @@ function define_raster(cloud::Cloud, orig_tile::BoundingBox, overlap::Float64, c
 
     # create grid definition
     xy_idx, npoints = reg_grid_index(cloud, nrow, ncol, bbox, cellsize;
-        pointfilter = pointfilter)
+        pointfilter=pointfilter)
     Raster(xy_idx, nrow, ncol, bbox, cellsize, epsg, npoints, mask)
 end
 
@@ -250,40 +253,40 @@ end
 function define_raster(cloud::Cloud, cellsize::Float64;
     snapgrid=cellsize,
     epsg=Nullable{Int}(),
-    pointfilter = nothing)
+    pointfilter=nothing)
 
     # create grid definition
     nrow, ncol, bbox = reg_grid(cloud, cellsize; snapgrid=snapgrid)
     xy_idx, npoints = reg_grid_index(cloud, nrow, ncol, bbox, cellsize;
-        pointfilter = pointfilter)
+        pointfilter=pointfilter)
     Raster(xy_idx, nrow, ncol, bbox, cellsize, epsg, npoints)
 end
 
 "raster definition constructor from Cloud, and GDAL geotransform"
 function define_raster(cloud::Cloud, nrow::Integer, ncol::Integer, geotransform::Vector{Float64};
     epsg=Nullable{Int}(),
-    pointfilter = nothing)
+    pointfilter=nothing)
 
     # create grid definition
     cellsize = Float64(geotransform[2])
     nrow, ncol, bbox = reg_grid(nrow, ncol, geotransform)
     xy_idx, npoints = reg_grid_index(cloud, nrow, ncol, bbox, cellsize;
-        pointfilter = pointfilter)
+        pointfilter=pointfilter)
     Raster(xy_idx, nrow, ncol, bbox, cellsize, epsg, npoints)
 end
 
 "raster definition constructor from Cloud, and GDAL geotransform"
 function define_raster_overlap(cloud::Cloud, nrow::Integer, ncol::Integer, geotransform::Vector{Float64};
     epsg=Nullable{Int}(),
-    pointfilter = nothing,
-    overlap = 100.0)
+    pointfilter=nothing,
+    overlap=100.0)
 
     # create grid definition
     cellsize = Float64(geotransform[2])
     nrow, ncol, bbox = reg_grid(nrow, ncol, geotransform)
     xy_idx, npoints = reg_grid_index_overlap(cloud, nrow, ncol, bbox, cellsize;
-        pointfilter = pointfilter,
-        overlap = overlap)
+        pointfilter=pointfilter,
+        overlap=overlap)
     Raster(xy_idx, nrow, ncol, bbox, cellsize, epsg, npoints)
 end
 
@@ -345,7 +348,7 @@ function reg_grid_index(
 
     n = nrow * ncol # number of cells
     # the idx array gives per LAS point the linear index into the grid it was assigned to
-    idx = Array{Vector{Int32}}(undef,n) # some stay zero because of skipped points
+    idx = Array{Vector{Int32}}(undef, n) # some stay zero because of skipped points
     for icell in 1:n
         idx[icell] = Int32[]
     end
@@ -371,8 +374,8 @@ function reg_grid_index_overlap(
     ncol::Int,
     bbox::BoundingBox,
     cellsize::Float64;
-    pointfilter = nothing,
-    overlap = 100.0)
+    pointfilter=nothing,
+    overlap=100.0)
 
     n = nrow * ncol # number of cells
     # the idx array gives per LAS point the linear index into the grid it was assigned to
@@ -392,15 +395,15 @@ function reg_grid_index_overlap(
         row, col, isinside, inleft, inbottom, inright, intop = coords2ind_overlap(bbox, nrow, ncol, cellsize, xi, yi, overlap=overlap)
         icell = sub2ind((nrow, ncol), row, col)
 
-        ileft = sub2ind((nrow, ncol), row, col-1)
-        ibottom = sub2ind((nrow, ncol), row+1, col)
-        iright = sub2ind((nrow, ncol), row, col+1)
-        itop = sub2ind((nrow, ncol), row-1, col)
+        ileft = sub2ind((nrow, ncol), row, col - 1)
+        ibottom = sub2ind((nrow, ncol), row + 1, col)
+        iright = sub2ind((nrow, ncol), row, col + 1)
+        itop = sub2ind((nrow, ncol), row - 1, col)
 
-        ileftbottom = sub2ind((nrow, ncol), row+1, col-1)
-        irightbottom = sub2ind((nrow, ncol), row+1, col+1)
-        irighttop = sub2ind((nrow, ncol), row-1, col+1)
-        ilefttop = sub2ind((nrow, ncol), row-1, col-1)
+        ileftbottom = sub2ind((nrow, ncol), row + 1, col - 1)
+        irightbottom = sub2ind((nrow, ncol), row + 1, col + 1)
+        irighttop = sub2ind((nrow, ncol), row - 1, col + 1)
+        ilefttop = sub2ind((nrow, ncol), row - 1, col - 1)
 
         # center
         isinside && push!(idx[icell], i)
@@ -422,14 +425,14 @@ function reg_grid_index_overlap(
 
     idx, npoints
 end
-
+        
 """fill empty raster index cells with nearest neighbor point
 this method creates a new raster index"""
 function inpaint_missings_nn(r::Raster, cloud::Cloud;
-    fill_max_dist = 10)
+    fill_max_dist=10)
     # index points that satisfy pointfilter
     index = Int32[]
-    for i=1:length(r)
+    for i = 1:length(r)
         for idx in r[i]
             push!(index, idx)
         end
@@ -453,7 +456,7 @@ function inpaint_missings_nn(r::Raster, cloud::Cloud;
         isempty(idx[icell]) || continue
         missings[icell] = true
         # for empty cells find nearest neighbor point
-        x, y = ind2coords(r.bbox,r.nrow,r.ncol,r.cellsize,icell)
+        x, y = ind2coords(r.bbox, r.nrow, r.ncol, r.cellsize, icell)
         i, d = knn(tree, [x, y], 1)
         d[1] <= fill_max_dist && push!(idx[icell], index[i[1]])
     end
@@ -467,14 +470,14 @@ end
 function filter_raster(r::Raster, cloud::Cloud, pointfilter)
     n = length(r)
     # create empty index
-    idx = Array{Vector{Int32}}(undef,n) # some stay zero because of skipped points
+    idx = Array{Vector{Int32}}(undef, n) # some stay zero because of skipped points
     for icell in 1:n
         idx[icell] = Int32[]
     end
 
     # index points that satisfy pointfilter
     npoints = 0
-    for icell=1:n
+    for icell = 1:n
         for i in r[icell]
             (pointfilter != nothing) && (pointfilter(cloud, i) || continue)
             push!(idx[icell], i)
@@ -501,11 +504,11 @@ pointfilter function to filter points
       end
 "
 function rasterize(cloud::Cloud, r::Raster;
-    reducer = reducer_minz, # function to calculate value per cell pased on
-    pointfilter = nothing, # predicate function to filter individual points
-    min_dens = 0,
-    nodata = -9999.0,
-    return_density = false)
+    reducer=reducer_minz, # function to calculate value per cell pased on
+    pointfilter=nothing, # predicate function to filter individual points
+    min_dens=0,
+    nodata=-9999.0,
+    return_density=false)
 
     # check dimensions of output
     nlayers = 1 + return_density
@@ -543,9 +546,9 @@ function rasterize(cloud::Cloud, r::Raster;
 
         np < 1 && continue # stat functions don't work on empty arrays
         # set statistics to grid
-        raster[row, col, 1:end-return_density] .= reducer(cloud, idx)
+        raster[row, col, 1:end - return_density] .= reducer(cloud, idx)
     end
 
     # return raster with statistics, density is saved to last layer
     raster
-end
+        end

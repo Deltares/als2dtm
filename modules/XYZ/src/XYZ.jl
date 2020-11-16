@@ -32,6 +32,7 @@ using FixedPointNumbers
 using GDAL
 using FileIO
 using LasIO
+using LazIO
 using NearestNeighbors
 using PeatUtils
 using ProgressMeter

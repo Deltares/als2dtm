@@ -41,7 +41,7 @@ function add_point!(
     i::Integer,
     pointtype::Type{T}) where T <: LasPoint
 
-        pointdata[i] = SVector{3,Float64}(
+    pointdata[i] = SVector{3,Float64}(
         xcoord(lasp, header),
         ycoord(lasp, header),
         zcoord(lasp, header))
@@ -94,9 +94,19 @@ end
 
 function read_pointcloud(filepath::File{format"LAZ"})
     fn = filename(filepath)
-    header, pointdata, attr = open(`laszip -olas -stdout -i "$fn"`) do s
-        read_pointcloud(s)
+    header, points = LazIO.load(fn)
+
+    n = Int(header.records_count)
+    pointtype = LasIO.pointformat(header)
+
+    # pre allocate the parts that will go into the Cloud
+    pointdata = Vector{SVector{3,Float64}}(undef, n)
+    attr = prepare_attributes(pointtype, n)
+
+    for (i, lasp) in enumerate(points)
+        add_point!(lasp, header, pointdata, attr, i, pointtype)
     end
+
     cloud = Cloud(pointdata, attr)
     cloud, header
 end
