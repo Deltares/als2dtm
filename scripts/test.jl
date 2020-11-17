@@ -13,17 +13,17 @@ function parse_commandline()
         "--slope"
             help = "PMF slope"
             arg_type = Float64
-            default = 0.6
+            default = 0.01
             range_tester = x -> x > 0.0
         "--dh_min"
             help = "PMF dh_min"
             arg_type = Float64
-            default = 0.5
+            default = 0.1
             range_tester = x -> x > 0.0
         "--dh_max"
             help = "PMF dh_max"
             arg_type = Float64
-            default = 1.1
+            default = 2.5
             range_tester = x -> x > 0.0
         "--high_res"
             help = "High resolution to rasterize"
@@ -33,7 +33,7 @@ function parse_commandline()
         "--low_res"
             help = "Low resolution to rasterize"
             arg_type = Float64
-            default = 100.
+            default = 25.
             range_tester = x -> x > 0.0
         "--radius"
             help = "PMF radius in coordinate system units"
@@ -66,19 +66,5 @@ outfolder = arg["outfolder"]
 radius = arg["radius"]
 
 isdir(outfolder) || mkpath(outfolder) # ensure it exists
-
-# infile = "data/small.laz"
-# infile = "area1.las"
-# outfolder = "output/"
-
-# # PMF settings
-# radius = 16.
-# slope = 0.6
-# dhmax = 1.1
-# dhmin = 0.5
-
-# # Resolution settings
-# high_res = 1.0
-# low_res = 100.0
 
 lidar_pipeline(infile, epsg, outfolder, radius, slope, dh_max, dh_min, high_res, low_res)
