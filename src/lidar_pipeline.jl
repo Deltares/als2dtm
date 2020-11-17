@@ -142,17 +142,19 @@ function lidar_pipeline(
     zmin_filtered[((bin_vegetation .| dropouts) .| .!smallboundarymask_r)] .= nodata
     XYZ.grid2tif(out_dir, "$(filen)_zmin_filtered.tif", r, zmin_filtered; nodata=nodata)
 
-    # Apply classification to pointcloud
+    # create high res dtm
     r_pmf = XYZ.filter_raster(r, cloud, XYZ.ground)
+    @info(" --> create dtm for terrain points")
+
+    # Purely ground based DTM including water
+    # low res dtm based on terrain (thus incuding water points) -> min 1m -> median at 25m resolution
     cloud_min = XYZ.reduce_min(cloud, r_pmf)
 
-    let r_terrain, dtm_lowres, cs = low_res
-        r_terrain = XYZ.define_raster(cloud_min, tile_bbox, overlap, cs; snapgrid=low_res, epsg=epsg,
-            pointfilter=XYZ.ground)
-        dtm_lowres = XYZ.rasterize(cloud_min, r_terrain; reducer=XYZ.reducer_medz,
-            min_dens=min_points / (cs^2))[:,:,1]
-        XYZ.grid2tif(out_dir, "$(filen)_dtm_$(cs)m.tif", r_terrain, dtm_lowres; nodata=nodata)
-    end
+    r_terrain = XYZ.define_raster(cloud_min, tile_bbox, overlap, low_res; snapgrid=low_res, epsg=epsg,
+        pointfilter=XYZ.ground)
+    dtm_lowres = XYZ.rasterize(cloud_min, r_terrain; reducer=XYZ.reducer_medz,
+        min_dens=min_points / (low_res^2))[:,:,1]
+    XYZ.grid2tif(out_dir, "$(filen)_dtm_including_water_$(low_res)m.tif", r_terrain, dtm_lowres; nodata=nodata)
 
     nothing
 end
