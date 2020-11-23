@@ -33,7 +33,7 @@ function parse_commandline()
         "--low_res"
             help = "Low resolution to rasterize"
             arg_type = Float64
-            default = 25.
+            default = 100.
             range_tester = x -> x > 0.0
         "--radius"
             help = "PMF radius in coordinate system units"

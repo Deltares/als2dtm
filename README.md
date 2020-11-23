@@ -24,10 +24,13 @@ Note that for using `.laz` files, we require a working version of `laszip` in yo
 ![pmf](figures/displaz.png)
 *ALS data example: data/small.laz Note the low vegetation on the mounds. Visualization in Displaz.*
 
-Run julia with `julia --project=<unzipped source code location>`.
+Change your working directory to the unzipped source code and run julia with `julia --project.
 
-If you run this for the first time, you need to download all the required packages. Please type:
-`] instantiate` and hit enter (you can exit package mode by typing backspace afterwards). 
+If you run this for the first time, you need to download all the required packages. You can do that
+in two ways (you only need one), both from the unzipped source code folder:
+- `julia --project install.jl`
+- run `julia`, type `] instantiate` and hit enter (you can exit package mode by typing backspace afterwards).
+
 Now you can use this package, on the first time this will start *precompiling*, which can take some time.
 
 ```julia
