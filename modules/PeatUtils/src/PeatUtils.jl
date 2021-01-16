@@ -274,7 +274,7 @@ function create_raster(
 
     dstdataset = GDAL.gdalcreate(gdaldriver, fname, size(A, 2), size(A, 1), bandcount, gdt, options)
 
-    transform = Float64[x_min, cellsize, 0.0, y_max, 0.0, -cellsize]
+    transform = Float64[x_min, cellsize, 0.0, y_max, 0.0, cellsize]
     GDAL.gdalsetgeotransform(dstdataset, transform)
 
     projection = epsg2wkt(epsg)
